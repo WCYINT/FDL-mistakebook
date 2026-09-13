@@ -1,0 +1,5 @@
+# FDL 开发/测试依赖（C4.1 / C5.1）
+pytest==9.1.1
+ruff==0.16.5
+pre-commit==4.6.2
+pytest-benchmark==5.3.0

@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 合规扫描需要完整历史
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+          pip install -e .
+
+      - name: Lint (ruff check)
+        run: ruff check .
+
+      - name: Format check (ruff format)
+        run: ruff format --check .
+
+      - name: No PyTorch check
+        run: bash scripts/check_no_torch.sh
+
+      - name: Banned words scan
+        run: bash scripts/check_no_banned_words.sh
+
+      - name: Release gate (secrets / private paths / version / license)
+        run: python scripts/check_release_ready.py .
+
+      - name: Git history leak scan
+        run: python scripts/check_release_ready.py . --history
+
+      # 说明：离线审计中「字体 vendor / 模型本地化 / 日志完整性」三项面向完整本地部署
+      # 环境。开源仓库按设计不包含 macOS 系统字体（版权）、ASR 模型与运行日志，
+      # 故该步骤以非阻断方式运行（详见 CHANGELOG「已知事项」）。
+      - name: Offline audit (NFR-1, non-blocking)
+        continue-on-error: true
+        run: python scripts/offline_audit.py
+
+      - name: Unit tests (pytest)
+        run: pytest

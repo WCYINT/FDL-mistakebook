@@ -1,0 +1,3295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FDL 学习报告</title>
+<style>
+  :root {
+    --ink: #2B2B2B; --panel: #FFFDF5; --bg: #FBF6EC;
+    --teal: #0E7C7B; --teal-soft: #E8F1E4; --gold: #D99A2B;
+    --ok: #3E7A52; --warn: #C07A1B; --danger: #B4552D;
+    --muted: #7A6F5D; --line: #D8CCB0;
+    /* 2026-09-13 King「注释类文字统一灰色」修复：以下 6 个变量此前被引用
+       （共 75 处）但从未定义 → var() 失效 fallback 到继承色（深墨色），
+       导致「次要注释」显示为近黑。此处按既有色板补齐。 */
+    --text-primary: #2B2B2B;    /* 主文本（= --ink） */
+    --text-secondary: #7A6F5D;  /* 次要注释（= --muted 灰棕） */
+    --text-tertiary: #9C9184;   /* 三级注释（更浅灰） */
+    --border: #D8CCB0;          /* 通用边框（= --line） */
+    --border-tertiary: #EAE1CC; /* 三级边框（更浅） */
+    --card: #FFFDF5;            /* 卡片底（= --panel） */
+    --hand: "Marker Felt", "Hannotate SC", "Kaiti SC", "STKaiti",
+            "Segoe Print", "Comic Sans MS", cursive;
+    --sketch-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { color: var(--ink); font-family: var(--hand);
+         font-size: 17px; line-height: 1.7;
+         background-color: var(--bg);
+         background-image: repeating-linear-gradient(
+           transparent, transparent 27px, rgba(120, 100, 60, 0.08) 28px); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px 48px; }
+  header.hero { background: var(--panel); border-bottom: 3px solid var(--ink);
+                border-radius: 0 0 var(--sketch-radius); }
+  header.hero .logo { display: block; width: min(640px, 92%); margin: 0 auto;
+                      mix-blend-mode: multiply; }
+  header.hero .meta { color: var(--muted); }
+  .meta { text-align: center; padding: 6px 0 18px; color: #8FA6AD; font-size: 14px; }
+  .data-cutoff-banner {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    max-width: 720px; margin: 0 auto 14px; padding: 8px 14px;
+    background: #FBF1DD; border: 1px solid #E7CFA0; border-radius: 10px;
+    color: #9A6A12; font-size: 13px; line-height: 1.5;
+  }
+  .data-cutoff-banner svg { flex: 0 0 auto; }
+  nav.tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+             padding: 12px 0; position: sticky; top: 0; background: var(--bg);
+             border-bottom: 2px dashed var(--line); z-index: 5; }
+  nav.tabs button { border: 2px solid var(--ink); background: var(--panel);
+                    padding: 6px 16px; cursor: pointer;
+                    border-radius: 155px 15px 225px 15px / 15px 225px 15px 255px;
+                    font-size: 16px; color: var(--ink); font-family: var(--hand); }
+  nav.tabs button:nth-child(odd) { transform: rotate(-0.6deg); }
+  nav.tabs button:nth-child(even) { transform: rotate(0.5deg); }
+  nav.tabs button[aria-selected="true"] { background: var(--gold); color: var(--ink);
+                                          border-color: var(--ink);
+                                          box-shadow: 2px 2px 0 var(--ink); }
+  section.panel { display: none; padding-top: 20px; }
+  section.panel.active { display: block; }
+  .cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  /* 2026-09-13 King「标题移至对应模块左上角」修复：
+     #review-list 是 .cards 网格——内嵌的区块标题（h3 待复习/已复习、h4 复习日小组）
+     此前按网格单元排布，会落在某一行中间（如「已复习（按复习日）」出现在卡片之间），
+     不与左缘对齐。让标题横跨整行（grid-column: 1 / -1）→ 每段标题独占一行、
+     统一对齐左上角（与「待复习」位置一致）。 */
+  #review-list > h3, #review-list > h4 { grid-column: 1 / -1; text-align: left; }
+  /* 2026-09-13 King #12：FDL logo 星星 → 学习星图学科超链接。可点星星有 hover 反馈 */
+  .logo-star { cursor: pointer; transition: opacity 120ms; }
+  .logo-star:hover { opacity: 1 !important; stroke: #FFFDF5; stroke-width: 1.2; }
+  .card { background: var(--panel); border: 2px solid var(--ink);
+          border-radius: var(--sketch-radius);
+          padding: 14px 16px;
+          box-shadow: 2px 3px 0 rgba(43, 43, 43, 0.18); }
+  .cards .card:nth-child(odd) { transform: rotate(-0.5deg); }
+  .cards .card:nth-child(even) { transform: rotate(0.4deg); }
+  .card h3 { font-size: 14px; color: var(--muted); font-weight: 500; }
+  /* 2026-09-13 King：数字放大凸显（30 → 34px）。所有 .v 数字均可点击看详情
+     （详见 card() 渲染：有 detail 才加 num-click，无 detail 的为「个别情况」）。 */
+  .card .v { font-size: 34px; font-weight: 700; margin: 4px 0; }
+  .card .t { font-size: 13px; color: var(--muted); }
+  .card.ok .v { color: var(--ok); } .card.warn .v { color: var(--warn); }
+  .card.danger .v { color: var(--danger); } .card.na .v { color: var(--muted); }
+  .redline { background: var(--panel); border: 2px solid var(--ink);
+             border-left: 8px solid var(--line);
+             border-radius: var(--sketch-radius);
+             padding: 12px 16px; margin: 10px 0; }
+  .redline.trig { border-left-color: var(--danger); }
+  .redline.calm { border-left-color: var(--ok); }
+  .redline.na { border-left-color: var(--muted); }
+  .redline h4 { font-size: 16px; } .redline p { font-size: 14px; color: var(--muted); }
+  .star { fill: #4A5F6B; } .star.lit { fill: var(--gold); }
+  .note { font-size: 13px; color: var(--muted); padding: 8px 2px; }
+  svg.chart { width: 100%; height: auto; background: var(--panel);
+              border: 2px solid var(--ink);
+              border-radius: var(--sketch-radius); }
+  .detail-mask { position: fixed; inset: 0; background: rgba(43, 43, 43, 0.35);
+                 display: none; z-index: 50; }
+  .detail-mask.open { display: block; }
+  .detail-panel { position: fixed; right: 0; top: 0; bottom: 0; width: min(420px, 92vw);
+                  background: var(--panel); border-left: 3px solid var(--ink);
+                  box-shadow: -4px 0 12px rgba(43, 43, 43, 0.2); z-index: 60;
+                  padding: 20px 18px; overflow-y: auto; display: none; }
+  .detail-panel.open { display: block; }
+  .detail-panel h3 { font-size: 20px; margin-bottom: 8px; }
+  .detail-panel .sec { margin: 12px 0; }
+  .detail-panel .sec h4 { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+  .detail-panel table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .detail-panel th, .detail-panel td { border-bottom: 1px dashed var(--line);
+                                       padding: 4px 6px; text-align: left; }
+  .detail-panel .close { position: absolute; right: 14px; top: 12px;
+                         border: 2px solid var(--ink); background: var(--panel);
+                         border-radius: 155px 15px 225px 15px/15px 225px 15px 255px;
+                         padding: 2px 12px; cursor: pointer; font-family: var(--hand); }
+  /* 待人工确认对话框（2026-09-10 King）—— 沿用 detail-panel 视觉语言：
+     遮罩 + 右侧滑入面板 + 顶部关闭；表单含"错题文本/选项/答案/解析/错因"，
+     提交前二次确认；成功后同步 review_queue 状态 + 题库。 */
+  .confirm-mask { position: fixed; inset: 0; background: rgba(20, 20, 20, 0.55);
+                  display: none; z-index: 65; }
+  .confirm-mask.open { display: block; }
+  .confirm-panel { position: fixed; right: 0; top: 0; bottom: 0; width: min(520px, 94vw);
+                   background: var(--panel); border-left: 3px solid var(--ink);
+                   box-shadow: -4px 0 16px rgba(43, 43, 43, 0.25); z-index: 66;
+                   padding: 20px 22px 22px; overflow-y: auto; display: none; }
+  .confirm-panel.open { display: block; }
+  .confirm-panel h3 { font-size: 18px; margin: 0 0 4px; padding-right: 60px; }
+  .confirm-panel .ct-meta { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+  .confirm-panel label { display: block; font-size: 12px; color: var(--text-secondary);
+                        margin: 8px 0 3px; }
+  .confirm-panel input, .confirm-panel select, .confirm-panel textarea {
+    width: 100%; box-sizing: border-box; padding: 7px 9px; border: 1.5px solid var(--ink);
+    border-radius: 6px; background: #FFF; font-family: var(--hand); font-size: 13px;
+    line-height: 1.5; color: var(--ink); }
+  .confirm-panel textarea { min-height: 64px; resize: vertical; }
+  .confirm-panel .ct-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .confirm-panel .ct-actions { display: flex; gap: 10px; justify-content: flex-end;
+                              margin-top: 18px; }
+  .confirm-panel .ct-actions button {
+    padding: 7px 18px; border: 2px solid var(--ink); border-radius: 6px;
+    background: var(--panel); cursor: pointer; font-family: var(--hand); font-size: 13px; }
+  .confirm-panel .ct-actions .primary { background: var(--gold); color: #fff; }
+  .confirm-panel .ct-actions .danger { background: #B14B4B; color: #fff; border-color: #B14B4B; }
+  .confirm-panel .ct-status { font-size: 12px; margin-top: 10px; min-height: 18px; }
+  .confirm-panel .ct-status.ok { color: #2f9e6e; }
+  .confirm-panel .ct-status.err { color: #B14B4B; }
+  .num-click { cursor: pointer; text-decoration: underline dotted var(--gold);
+               text-underline-offset: 4px; }
+  .lightbox-mask { position: fixed; inset: 0; background: rgba(20, 20, 20, 0.88);
+                   display: none; z-index: 70; align-items: center; justify-content: center;
+                   flex-direction: column; }
+  .lightbox-mask.open { display: flex; }
+  .lightbox-mask img { max-width: 88vw; max-height: 86vh; border: 3px solid var(--panel);
+                       box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55); background: #fff;
+                       transition: transform 0.25s ease;
+                       transform-origin: center center; }
+  .lightbox-mask img.rot-90  { transform: rotate(90deg); }
+  .lightbox-mask img.rot-180 { transform: rotate(180deg); }
+  .lightbox-mask img.rot-270 { transform: rotate(270deg); }
+  /* 放大/缩小（与旋转可叠加）—— zoom-50/75/100/125/150 */
+  .lightbox-mask img.zoom-50  { transform: scale(0.5); }
+  .lightbox-mask img.zoom-75  { transform: scale(0.75); }
+  .lightbox-mask img.zoom-100 { transform: scale(1); }
+  .lightbox-mask img.zoom-125 { transform: scale(1.25); }
+  .lightbox-mask img.zoom-150 { transform: scale(1.5); }
+  .lightbox-mask img.zoom-200 { transform: scale(2); }
+  /* 旋转 + 缩放可叠加（class 同时存在时以"组合 transform"实现） */
+  .lightbox-mask img.rot-90.zoom-50   { transform: rotate(90deg) scale(0.5); }
+  .lightbox-mask img.rot-180.zoom-50  { transform: rotate(180deg) scale(0.5); }
+  .lightbox-mask img.rot-270.zoom-50  { transform: rotate(270deg) scale(0.5); }
+  .lightbox-mask img.rot-90.zoom-75   { transform: rotate(90deg) scale(0.75); }
+  .lightbox-mask img.rot-180.zoom-75  { transform: rotate(180deg) scale(0.75); }
+  .lightbox-mask img.rot-270.zoom-75  { transform: rotate(270deg) scale(0.75); }
+  .lightbox-mask img.rot-90.zoom-125  { transform: rotate(90deg) scale(1.25); }
+  .lightbox-mask img.rot-180.zoom-125 { transform: rotate(180deg) scale(1.25); }
+  .lightbox-mask img.rot-270.zoom-125 { transform: rotate(270deg) scale(1.25); }
+  .lightbox-mask img.rot-90.zoom-150  { transform: rotate(90deg) scale(1.5); }
+  .lightbox-mask img.rot-180.zoom-150 { transform: rotate(180deg) scale(1.5); }
+  .lightbox-mask img.rot-270.zoom-150 { transform: rotate(270deg) scale(1.5); }
+  .lightbox-mask img.rot-90.zoom-200  { transform: rotate(90deg) scale(2); }
+  .lightbox-mask img.rot-180.zoom-200 { transform: rotate(180deg) scale(2); }
+  .lightbox-mask img.rot-270.zoom-200 { transform: rotate(270deg) scale(2); }
+  .lightbox-caption { color: var(--panel); font-size: 15px; margin-top: 10px;
+                      font-family: var(--hand); }
+  .lightbox-close { position: absolute; right: 18px; top: 14px;
+                    border: 2px solid var(--panel); background: transparent; color: var(--panel);
+                    border-radius: 155px 15px 225px 15px/15px 225px 15px 255px;
+                    padding: 4px 16px; cursor: pointer; font-family: var(--hand); font-size: 16px; }
+  /* 操作钮（缩小/放大/旋转）：固定在右侧【垂直居中】——
+     top:50% + translateY(-50%) 让按钮组几何中心恒在视口纵向中点，
+     与右上角关闭钮（top 14px）纵向距离 ≥ 视口一半，最大限度避免误触；
+     右缘 18px 独立成列，不与居中图片（max-width 92vw，左右留 4vw）主体重叠。
+     响应式：≤768px 时收窄右距与内边距，按钮仍完整可点。 */
+  .lightbox-toolbar { position: absolute; right: 18px; top: 50%;
+    transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 12px; align-items: stretch;
+    z-index: 10; padding: 10px 8px;
+    background: rgba(20, 20, 20, 0.55); border-radius: 10px; }
+  .lightbox-btn { border: 2px solid var(--panel); background: transparent; color: var(--panel);
+                  border-radius: 155px 15px 225px 15px/15px 225px 15px 255px;
+                  padding: 5px 14px; cursor: pointer; font-family: var(--hand); font-size: 15px;
+                  transition: background 0.15s; }
+  .lightbox-btn:hover { background: rgba(255, 255, 255, 0.18); }
+  .lightbox-btn:active { background: rgba(255, 255, 255, 0.32); }
+
+  /* === 复习语音分析卡片 === */
+  .ra-card { background: var(--card); border: 2px solid var(--ink);
+              border-radius: 18px; padding: 14px 16px; margin: 10px 0; }
+  .ra-card .ra-meta { display: flex; gap: 12px; flex-wrap: wrap;
+                      font-size: 12px; color: var(--ink); opacity: 0.75;
+                      margin-bottom: 8px; }
+  .ra-card h4 { margin: 4px 0 8px; font-size: 16px; }
+  .ra-section { margin: 8px 0; font-size: 13px; }
+  .ra-section strong { color: var(--ink); }
+  .ra-tag { display: inline-block; padding: 2px 8px; margin: 2px 4px 2px 0;
+            border-radius: 12px; background: var(--panel); color: #FFFCF3;
+            font-size: 12px; }
+  .ra-tag.fam  { background: #2E5E6B; }
+  .ra-tag.cnf  { background: #B5392A; }
+  .ra-tag.prc  { background: #D99A2B; color: #10222B; }
+  .ra-toggle { background: transparent; border: 1px dashed var(--ink);
+               color: var(--ink); border-radius: 6px; padding: 3px 10px;
+               cursor: pointer; font-family: var(--hand); font-size: 12px; }
+  .ra-toggle:hover { background: rgba(43,43,43,0.08); }
+  .ra-text { background: #F4ECD8; border-left: 3px solid var(--panel);
+             padding: 8px 10px; margin: 6px 0; font-size: 13px;
+             white-space: pre-wrap; }
+  .ra-err-list li { color: #8b1e1e; }
+
+  /* === 复习反馈表单 === */
+  .review-form { background: var(--card); border: 2px solid var(--ink);
+                 border-radius: 18px; padding: 16px 18px; margin: 14px 0; }
+  .review-form h3 { margin: 0 0 8px; font-size: 17px; }
+  .review-form .rf-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+                         margin: 6px 0; }
+  .review-form label { font-size: 14px; color: var(--ink); margin-right: 4px; }
+  .review-form select, .review-form input[type=text], .review-form textarea {
+    border: 1.5px solid var(--ink); background: #FFFCF3; padding: 4px 8px;
+    font-family: var(--hand); font-size: 14px; border-radius: 6px; color: var(--ink); }
+  .review-form textarea { width: 100%; min-height: 56px; resize: vertical; box-sizing: border-box; }
+  .review-form .rf-attach { display: flex; gap: 6px; align-items: center; margin: 4px 0;
+                            font-family: var(--hand); font-size: 13px; }
+  .review-form .rf-attach select, .review-form .rf-attach input { flex: 1; }
+  .review-form .rf-attach button { border: 1.5px solid var(--ink); background: var(--panel);
+                                   color: #FFFCF3; border-radius: 6px; padding: 3px 10px;
+                                   cursor: pointer; font-family: var(--hand); font-size: 13px; }
+  .review-form .rf-attach button:hover { background: #15323B; }
+  .review-form .rf-list { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; }
+  .review-form .rf-list li { background: #F4ECD8; border: 1px dashed var(--ink);
+                             padding: 4px 8px; margin: 3px 0; border-radius: 6px;
+                             display: flex; justify-content: space-between; align-items: center; }
+  .review-form .rf-list li button { background: transparent; border: none;
+                                    color: #8b1e1e; cursor: pointer; font-size: 14px; }
+  .review-form .rf-actions { margin-top: 12px; display: flex; gap: 10px; }
+  .review-form .rf-actions button { border: 2px solid var(--ink); border-radius: 8px;
+                                   padding: 6px 16px; cursor: pointer;
+                                   font-family: var(--hand); font-size: 15px; }
+  .review-form .rf-actions .primary { background: var(--ink); color: #FFFCF3; }
+  .review-form .rf-actions .primary:hover { background: #15323B; }
+  .review-form .rf-actions .ghost { background: transparent; color: var(--ink); }
+  .review-form .rf-status { margin-top: 6px; font-size: 13px; min-height: 18px; }
+  .review-form .rf-status.ok { color: #2E5E6B; }
+  .review-form .rf-status.err { color: #8b1e1e; }
+
+  /* ── 待确认候选：关联题号 → 跳转定位原图（2026-09-12 King 需求）──
+     链接用 --gold 下划线；无原图的题号改为虚线弱化（点击仍可尝试定位）。
+     跳转后目标错题卡加 .fd-jump-highlight 做两轮金色描边脉冲（纯 box-shadow，
+     不引起布局位移；ease-out 无弹跳，符合 P0 规范）。 */
+  .kp-mistake-link { color: var(--gold); text-decoration: underline; cursor: pointer; }
+  .kp-mistake-link:hover { background: rgba(0, 0, 0, 0.06); border-radius: 3px; }
+  .kp-mistake-link.kp-nophoto { color: var(--text-tertiary); text-decoration-style: dotted; }
+  @keyframes fdJumpPulse {
+    0%   { box-shadow: 0 0 0 0 var(--gold); }
+    50%  { box-shadow: 0 0 0 5px var(--gold); }
+    100% { box-shadow: 0 0 0 0 var(--gold); }
+  }
+  .fd-jump-highlight { animation: fdJumpPulse 1.2s ease-out 2; }
+
+  @media (max-width: 640px) {
+    .card .v { font-size: 24px; }
+    nav.tabs button { padding: 6px 12px; font-size: 14px; }
+    /* 窄屏：图片收窄至 80vw 让出按钮列；按钮小号贴右缘 */
+    .lightbox-mask img { max-width: 80vw; }
+    .lightbox-toolbar { right: 6px; gap: 6px; }
+    .lightbox-btn { padding: 4px 8px; font-size: 13px; }
+  }
+
+  /* ── 学习星图（Step 3 · 2026-09-12）：三维筛选 + 关联边 + Obsidian ── */
+  .sm-filters { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .sm-frow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sm-flabel { font-size: 14px; color: var(--muted); min-width: 2.6em; }
+  .sm-fbtns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sm-fbtns .sf-btn { font-family: var(--hand); border: 2px solid var(--ink);
+    background: var(--panel); border-radius: var(--sketch-radius);
+    padding: 3px 12px; cursor: pointer; font-size: 14px; color: var(--ink); }
+  .sm-fbtns .sf-btn.on { background: var(--gold); box-shadow: 2px 2px 0 var(--ink); }
+  .sm-lookback { font-size: 13px; margin-left: auto; color: var(--muted); }
+  .sm-legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+    margin: 2px 2px 8px; font-size: 13px; color: var(--muted); }
+  .sm-lg { display: inline-flex; align-items: center; gap: 5px; }
+  .sm-stat { margin-left: auto; }
+  .sm-cluster { fill: rgba(255, 253, 245, 0.66); stroke: var(--line); stroke-width: 1; }
+  .sm-clabel { font-family: var(--hand); font-size: 13px; fill: var(--muted); }
+  .sm-node { cursor: pointer; }
+  .sm-nlabel { font-family: var(--hand); font-size: 10px; fill: var(--ink);
+    text-anchor: middle; pointer-events: none; }
+  .sm-e { fill: none; pointer-events: stroke; }
+  .sm-e-auto { stroke: #0E7C7B; stroke-width: 1.8; opacity: 0.55; }
+  .sm-e-suggest { stroke: #8A8377; stroke-width: 1.2; stroke-dasharray: 4 3; opacity: 0.5; }
+  .sm-e-cross { stroke: #D99A2B; stroke-width: 2.6; opacity: 0.85; }
+  .sm-e.hl { opacity: 1; stroke-width: 3; }
+  .sm-dim { opacity: 0.15; }
+  .sm-link { display: inline-block; margin: 4px 8px 0 0; padding: 4px 12px;
+    border: 2px solid var(--ink); border-radius: var(--sketch-radius);
+    background: var(--panel); color: var(--ink); font-family: var(--hand);
+    font-size: 14px; text-decoration: none; cursor: pointer; }
+  .sm-link:hover { background: var(--gold); }
+</style>
+</head>
+<body>
+<header class="hero">
+  <svg class="logo" viewBox="0 0 640 200" role="img" aria-label="FDL 签名 logo">
+    <rect width="640" height="200" rx="18" fill="#10222B"/>
+    <path d="M 60 150 Q 240 30 560 96" fill="none" stroke="#2E5E6B" stroke-width="1.6" stroke-dasharray="2 6"/>
+    <path d="M 60 162 Q 260 56 560 118" fill="none" stroke="#2E5E6B" stroke-width="1.2" stroke-dasharray="1 8"/>
+    <!-- 2026-09-13 King #12：每颗星 = 一个学科的入口——点击跳转「学习星图」并选中对应学科。
+         data-subject 值即 starmap subject code；第 5 颗为「全部」。title 为悬停提示（无 emoji）。 -->
+    <circle class="logo-star" data-subject="MATH" cx="150" cy="96" r="4" fill="#F5B841" opacity="0.95"><title>数学星图（点击查看）</title></circle>
+    <circle class="logo-star" data-subject="CHINESE" cx="252" cy="66" r="3" fill="#8FA6AD" opacity="0.75"><title>语文星图（点击查看）</title></circle>
+    <circle class="logo-star" data-subject="ENGLISH" cx="352" cy="52" r="5" fill="#F5B841" opacity="0.9"><title>英语星图（点击查看）</title></circle>
+    <circle class="logo-star" data-subject="SCIENCE" cx="446" cy="72" r="3" fill="#8FA6AD" opacity="0.6"><title>科学星图（点击查看）</title></circle>
+    <circle class="logo-star" data-subject="ALL" cx="520" cy="98" r="4" fill="#F5B841" opacity="0.85"><title>全部学科星图（点击查看）</title></circle>
+    <g transform="translate(84,88)">
+      <ellipse cx="34" cy="52" rx="14" ry="4.5" fill="#0E7C7B"/>
+      <rect x="30" y="14" width="7" height="38" rx="3" fill="#125E5D"/>
+      <path d="M 6 14 A 28 20 0 0 1 62 14 L 34 24 Z" fill="#0E7C7B" stroke="#1A9494" stroke-width="1.5"/>
+      <circle cx="34" cy="24" r="5" fill="#FFE9B8"/>
+    </g>
+    <text x="150" y="150" font-family="Avenir Next, PingFang SC, sans-serif" font-size="56"
+          font-weight="700" letter-spacing="6" fill="#E9F2F0">FDL</text>
+    <text x="292" y="150" font-family="PingFang SC, sans-serif" font-size="17"
+          fill="#8FA6AD">Frank Deep Learning · 学习点灯人</text>
+    <text x="150" y="176" font-family="PingFang SC, sans-serif" font-size="12"
+          fill="#51707C">每盏灯下的星，都是自己点亮的</text>
+  </svg>
+  <div class="meta">报告生成于 <strong>__GENERATED_AT_BJ__</strong>（北京时间）｜ 学习视图：实时（截至 __TODAY__）｜ 家长视图：延迟 7 天（质量数据截止 __CUTOFF__）</div>
+  __DATA_DATE_BANNER__
+</header>
+<div class="detail-mask" id="detail-mask"></div>
+<div class="lightbox-mask" id="lightbox-mask">
+  <button class="lightbox-close" id="lightbox-close">关闭</button>
+  <img id="lightbox-img" alt="放大预览">
+  <div class="lightbox-caption" id="lightbox-caption"></div>
+  <div class="lightbox-toolbar">
+    <button class="lightbox-btn" id="lightbox-zoom-out" type="button" title="缩小">− 缩小</button>
+    <button class="lightbox-btn" id="lightbox-zoom-in"  type="button" title="放大">＋ 放大</button>
+    <button class="lightbox-btn" id="lightbox-rotate"  type="button" title="顺时针旋转 90°">↻ 旋转</button>
+  </div>
+</div>
+
+<!-- 复习反馈表单（默认隐藏，由"今日复习"页面调用 review-open-form() 唤起） -->
+<div class="review-form" id="review-form" style="display:none" aria-hidden="true">
+  <h3>复习反馈</h3>
+  <div class="rf-row">
+    <label>题目：</label>
+    <input type="text" id="rf-kp-label" readonly style="flex:1; min-width:200px">
+    <input type="hidden" id="rf-schedule-id">
+    <input type="hidden" id="rf-mistake-id">
+    <input type="hidden" id="rf-kp-id">
+    <input type="hidden" id="rf-subject-id">
+  </div>
+  <div class="rf-row">
+    <label>掌握程度：</label>
+    <select id="rf-rating">
+      <option value="1">1 · 完全陌生</option>
+      <option value="2">2 · 模糊</option>
+      <option value="3" selected>3 · 掌握</option>
+      <option value="4">4 · 熟练</option>
+    </select>
+    <label style="margin-left:12px">耗时(秒)：</label>
+    <input type="text" id="rf-duration" placeholder="如 120" style="width:80px">
+  </div>
+  <div class="rf-row">
+    <textarea id="rf-note" placeholder="可选：本次复习的关键发现/解题思路/疑惑点..."></textarea>
+  </div>
+  <div class="rf-row" style="align-items:flex-start; flex-direction:column">
+    <label style="margin-bottom:4px">附件路径（录音/图片/扫描件等，便于溯源）：</label>
+    <div class="rf-attach">
+      <select id="rf-attach-kind">
+        <option value="audio">audio · 录音</option>
+        <option value="image">image · 图片</option>
+        <option value="document">document · 文档</option>
+        <option value="other">other · 其他</option>
+      </select>
+      <input type="text" id="rf-attach-path" placeholder="绝对路径或 ~/FDL-data/... 或 file://... 均支持">
+      <button type="button" id="rf-attach-add">+ 添加</button>
+    </div>
+    <ul class="rf-list" id="rf-attach-list"></ul>
+  </div>
+  <div class="rf-status" id="rf-status"></div>
+  <div class="rf-actions">
+    <button class="primary" type="button" id="rf-submit">提交反馈</button>
+    <button class="ghost" type="button" id="rf-cancel">取消</button>
+  </div>
+</div>
+<aside class="detail-panel" id="detail-panel" aria-label="数字详情">
+  <button class="close" id="detail-close">关闭</button>
+  <h3 id="detail-title"></h3>
+  <div class="sec"><h4>数据来源</h4><div id="detail-source"></div></div>
+  <div class="sec"><h4>明细记录</h4><div id="detail-rows"></div></div>
+  <div class="sec" id="detail-links-sec" style="display:none"><h4>操作</h4><div id="detail-links"></div></div>
+  <div class="sec"><h4>口径说明</h4><div id="detail-note"></div></div>
+</aside>
+<!-- 待人工确认错题对话框（2026-09-10 King）—— 字段可手填/编辑，含二次确认 -->
+<div class="confirm-mask" id="confirm-mask" aria-hidden="true"></div>
+<aside class="confirm-panel" id="confirm-panel" aria-label="待人工确认错题" role="dialog">
+  <button class="detail-panel close" id="confirm-close" style="position:absolute;right:14px;top:12px;">关闭</button>
+  <h3 id="confirm-title">录入错题</h3>
+  <div class="ct-meta" id="confirm-meta">请核对原图后填写或修改识别结果</div>
+  <form id="confirm-form" autocomplete="off">
+    <label>题号 <span style="color:var(--text-tertiary)">(必填)</span></label>
+    <input id="cf-qno" name="qno" placeholder="如：第 1 题 / 1. / 一、" required>
+    <label>错题文本 / 题干</label>
+    <textarea id="cf-stem" name="stem" placeholder="原题内容（可手输）"></textarea>
+    <div class="ct-row2">
+      <div>
+        <label>选项 A</label>
+        <input id="cf-optA" name="optA" placeholder="A. (无则留空)">
+      </div>
+      <div>
+        <label>选项 B</label>
+        <input id="cf-optB" name="optB" placeholder="B. (无则留空)">
+      </div>
+    </div>
+    <div class="ct-row2">
+      <div>
+        <label>选项 C</label>
+        <input id="cf-optC" name="optC" placeholder="C. (无则留空)">
+      </div>
+      <div>
+        <label>选项 D</label>
+        <input id="cf-optD" name="optD" placeholder="D. (无则留空)">
+      </div>
+    </div>
+    <div class="ct-row2">
+      <div>
+        <label>学生作答（可手输）</label>
+        <input id="cf-answer" name="answer" placeholder="如：B. 1300">
+      </div>
+      <div>
+        <label>正确答案（如已知）</label>
+        <input id="cf-correct" name="correct" placeholder="如：A. 1500（留空可后补）">
+      </div>
+    </div>
+    <label>错因</label>
+    <select id="cf-reason" name="reason">
+      <option value="CONCEPT">概念不清</option>
+      <option value="CALC">计算失误</option>
+      <option value="MISREAD">审题偏差</option>
+      <option value="NORM">规范缺失</option>
+      <option value="OTHER">其他 / 待人工判断</option>
+    </select>
+    <label>解析（可选）</label>
+    <textarea id="cf-explain" name="explain" placeholder="解题思路、要点、订正等"></textarea>
+    <div class="ct-status" id="confirm-status"></div>
+    <div class="ct-actions">
+      <button type="button" id="confirm-cancel">取消</button>
+      <button type="submit" class="primary" id="confirm-submit">提交并入错题本</button>
+    </div>
+  </form>
+</aside>
+<div class="wrap">
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-panel="cockpit">驾驶舱</button>
+  <button role="tab" aria-selected="false" data-panel="starmap">学习星图</button>
+  <button role="tab" aria-selected="false" data-panel="trail">探险足迹</button>
+  <button role="tab" aria-selected="false" data-panel="monsters">错题图鉴</button>
+  <button role="tab" aria-selected="false" data-panel="energy">记忆能量</button>
+  <button role="tab" aria-selected="false" data-panel="review">今日复习</button>
+  <button role="tab" aria-selected="false" data-panel="parent">家长视图</button>
+</nav>
+
+<section id="cockpit" class="panel active" role="tabpanel">
+  <div class="cards" id="cockpit-cards"></div>
+  <h3 style="margin:18px 0 6px">近 14 天体验趋势（每日有效分钟 · 悬停看数值）</h3>
+  <div class="trend-wrap" style="position:relative">
+    <svg class="chart" id="trend-svg" viewBox="0 0 900 200" aria-label="体验趋势"></svg>
+    <div id="trend-tip" role="tooltip" aria-hidden="true"
+         style="position:absolute;pointer-events:none;background:var(--panel);color:var(--ink);
+                padding:5px 9px;border:1.5px solid var(--ink);border-radius:var(--sketch-radius);
+                font-size:14px;font-weight:600;font-family:var(--hand);
+                box-shadow:2px 3px 0 rgba(43,43,43,0.18),0 4px 16px rgba(0,0,0,0.2);
+                opacity:0;transition:opacity 120ms;
+                transform:translate(-50%,-145%);white-space:nowrap;z-index:5;letter-spacing:0.3px"></div>
+  </div>
+  <h3 style="margin:18px 0 6px">三条红线</h3>
+  <div id="redlines"></div>
+  <p class="note">样本不足的指标显示「—」（不做推测）；质量诊断类指标在上线前 2 周对家长视图隐藏。</p>
+</section>
+
+<section id="starmap" class="panel" role="tabpanel">
+  <div class="sm-filters">
+    <div class="sm-frow"><span class="sm-flabel">学科</span><span class="sm-fbtns" id="sm-subjects"></span></div>
+    <div class="sm-frow"><span class="sm-flabel">领域</span><span class="sm-fbtns" id="sm-domains"></span></div>
+    <div class="sm-frow"><span class="sm-flabel">学期</span><span class="sm-fbtns" id="sm-terms"></span>
+      <label class="sm-lookback">时间回溯：
+        <input type="range" id="time-slider" min="0" max="4" value="4" step="1">
+        <span id="time-label">现在</span>
+      </label>
+    </div>
+  </div>
+  <div class="sm-legend">
+    <span class="sm-lg"><svg width="30" height="8" aria-hidden="true"><line x1="1" y1="4" x2="29" y2="4" stroke="#0E7C7B" stroke-width="2"/></svg>自动关联</span>
+    <span class="sm-lg"><svg width="30" height="8" aria-hidden="true"><line x1="1" y1="4" x2="29" y2="4" stroke="#8A8377" stroke-width="1.6" stroke-dasharray="4 3"/></svg>待复核</span>
+    <span class="sm-lg"><svg width="30" height="8" aria-hidden="true"><line x1="1" y1="4" x2="29" y2="4" stroke="#D99A2B" stroke-width="2.6"/></svg>跨学科</span>
+    <span class="sm-lg"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="#7A6F5D" stroke-width="1.4"/></svg>孤立点</span>
+    <span class="sm-lg sm-stat" id="sm-stat"></span>
+  </div>
+  <svg class="chart" viewBox="0 0 1260 700" id="starmap-svg" aria-label="知识星图"></svg>
+  <p class="note">四科 = 四星座，领域 = 子簇；星星颜色 = 掌握度（深灰 → 蓝 → 亮金），未点亮是深空里的微弱星尘。
+    点星星看详情，可在 Obsidian 打开对应知识卡；跨学科关联以金色高亮——学科之间的暗线。回溯滑块在复习数据积累后生效。</p>
+</section>
+
+<section id="trail" class="panel" role="tabpanel">
+  <svg class="chart" id="trail-heat" viewBox="0 0 500 180" aria-label="探险足迹热力日历"></svg>
+  <p class="note">横轴 = 周（每列一周、每格一天；顶部标注月份）；缺席的日子就留白——露营日（自由探索）也是足迹的一部分。更新时机：当晚 session 结束写入，次日 04:00 批处理后本页刷新可见。</p>
+</section>
+
+<section id="monsters" class="panel" role="tabpanel">
+  <div class="cards" id="monster-cards"></div>
+  <p class="note">驯服进度（V3 批次填充完整交互）：又遇到老朋友了，就再聊一次。</p>
+</section>
+
+<section id="energy" class="panel" role="tabpanel">
+  <div class="cards" id="energy-list"></div>
+  <p class="note">复习 = 充电。红色电池不超过屏幕三分之一——超过就说明排得太满了。更新时机：每次作答后即时重算；每日 04:00 批处理按时间衰减刷新（无作答也会自然下降）。</p>
+</section>
+
+<section id="review" class="panel" role="tabpanel">
+  <!-- 待确认知识点候选处理（2026-09-12 King 需求）：
+       系统从错题中 LLM 提炼的新知识点候选，逐条人工确认（同意/驳回 + LLM 二审） -->
+  <div id="kp-candidates-block" style="display:none">
+    <h3 style="margin:0 0 4px;font-size:15px">
+      待确认知识点候选（<span id="kp-cand-count">0</span> 条）
+    </h3>
+    <p class="note" style="margin-bottom:10px">
+      系统从错题中自动提炼的新知识点。点「同意」正式加入知识点库（此后可被自动匹配）；
+      点「驳回」需填写原因，系统会请 LLM 复核该理由是否成立。
+    </p>
+    <div id="kp-candidates-list"></div>
+    <p id="kp-cand-status" class="note" style="color:var(--text-secondary)"></p>
+  </div>
+  <div class="cards" id="review-list"></div>
+  <p class="note">完成一题就在错题卡上标记重做——驯服后它会进化成伙伴。截图为当日原始卷面（缩略图）。按间隔紧迫度排序：逾期越久、原间隔越短的越靠前。</p>
+
+  <!-- 今日复习语音分析（SenseVoice 转写 + minimax-M3 结构化提取）-->
+  <div id="review-audio-block" style="display:none">
+    <h3 style="margin-top:18px">复习语音分析（SenseVoice + minimax-M3）</h3>
+    <p class="note">本地 SenseVoice-Small 转写 + 云端 minimax-M3 提取关键知识点/错误点/掌握情况。点击转写文本可展开完整内容。</p>
+    <div id="review-audio-list"></div>
+  </div>
+</section>
+<section id="parent" class="panel" role="tabpanel">
+  <div id="parent-body"></div>
+</section>
+</div>
+<script>
+(function () {
+  // [FDL] IIFE 顶层错误捕获（防止单个错误中断后续所有渲染）
+  window.addEventListener("error", function (e) {
+    if (e.filename && e.filename.indexOf("blob:") === -1) {
+      console.warn("[FDL] runtime:", e.message, "@" + e.lineno + ":" + e.colno);
+    }
+  });
+  // Tab 切换
+  var tabs = document.querySelectorAll("nav.tabs button");
+  tabs.forEach(function (b) {
+    b.addEventListener("click", function () {
+      tabs.forEach(function (x) { x.setAttribute("aria-selected", "false"); });
+      b.setAttribute("aria-selected", "true");
+      document.querySelectorAll("section.panel").forEach(function (s) {
+        s.classList.toggle("active", s.id === b.dataset.panel);
+      });
+    });
+  });
+  // 数据注入（由 generate_report.py 构建 JSON）
+  var D = __REPORT_DATA__;
+  function card(m) {
+    var det = m.detail ? ' data-detail="' + encodeURIComponent(JSON.stringify(m.detail)) + '"' : "";
+    // 2026-09-13 King #6：提示仅在有详情时显示（无详情的卡片不误导"可点击"）
+    var tip = m.detail ? "（点击数字看详情）" : "";
+    return '<div class="card ' + m.status + (m.detail ? " num-click" : "") + '"' + det +
+           '><h3>' + m.name + "</h3>" +
+           '<div class="v">' + m.display + "</div>" +
+           '<div class="t">目标 ' + m.target + tip + "</div></div>";
+  }
+  // VIS-09 详情弹层
+  var mask = document.getElementById("detail-mask");
+  var panel = document.getElementById("detail-panel");
+  function openDetail(title, detail) {
+    document.getElementById("detail-title").textContent =
+      title + " · " + (detail.kind || "数字详情");
+    document.getElementById("detail-source").textContent = detail.source || "—";
+    document.getElementById("detail-note").textContent = detail.note || "—";
+    var rows = detail.rows || [];
+    var rh = document.getElementById("detail-rows");
+    if (!rows.length) {
+      rh.textContent = "（无明细行——口径见下方说明）";
+    } else {
+      var keys = Object.keys(rows[0]);
+      rh.innerHTML = "<table><tr>" + keys.map(function (k) {
+        return "<th>" + k + "</th>"; }).join("") + "</tr>" +
+        rows.map(function (r) {
+          return "<tr>" + keys.map(function (k) {
+            return "<td>" + r[k] + "</td>"; }).join("") + "</tr>";
+        }).join("") + "</table>";
+    }
+    renderDetailLinks(detail.links || []);
+    mask.classList.add("open");
+    panel.classList.add("open");
+  }
+  // 详情弹层「操作」区（Step 3 星图用：Obsidian 链接 / 复制路径；其他调用方不传 links 即自动隐藏）
+  function renderDetailLinks(links) {
+    var sec = document.getElementById("detail-links-sec");
+    var box = document.getElementById("detail-links");
+    if (!sec || !box) { return; }
+    box.innerHTML = "";
+    sec.style.display = links.length ? "block" : "none";
+    links.forEach(function (l) {
+      var a = document.createElement("a");
+      a.className = "sm-link";
+      a.textContent = l.label;
+      if (l.jump != null) {
+        // 2026-09-13 King #6/#14/#15：详情内的问题编号超链接——
+        // 跳转到「今日复习」页对应照片卡片（统一走全局 __fdJumpToMistake）。
+        a.href = "javascript:void(0)";
+        a.addEventListener("click", function () { window.__fdJumpToMistake(l.jump); });
+      } else if (l.href) {
+        a.href = l.href;
+      } else {
+        a.href = "javascript:void(0)";
+        a.addEventListener("click", function () {
+          var txt = l.copy || "";
+          var done = function () { a.textContent = "已复制到剪贴板"; };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(txt).then(done, function () { a.textContent = txt; });
+          } else {
+            var ta = document.createElement("textarea");
+            ta.value = txt; document.body.appendChild(ta); ta.select();
+            try { document.execCommand("copy"); done(); } catch (e) { a.textContent = txt; }
+            document.body.removeChild(ta);
+          }
+        });
+      }
+      box.appendChild(a);
+    });
+  }
+  function closeDetail() {
+    mask.classList.remove("open");
+    panel.classList.remove("open");
+  }
+  document.getElementById("detail-close").addEventListener("click", closeDetail);
+  mask.addEventListener("click", closeDetail);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { closeDetail(); }
+  });
+  document.body.addEventListener("click", function (e) {
+    var el = e.target.closest("[data-detail]");
+    if (el) {
+      try {
+        var d = JSON.parse(decodeURIComponent(el.getAttribute("data-detail")));
+        // 标题优先取 data-name（星图节点等无 <h3> 的元素）；回退旧行为
+        var t = el.getAttribute("data-name") ||
+                (el.querySelector("h3") ? el.querySelector("h3").textContent : "数字");
+        openDetail(t, d);
+      } catch (err) { /* 解析失败静默，不阻塞 */ }
+    }
+  }, true);
+  var cc = document.getElementById("cockpit-cards");
+  if (D.cockpit) { cc.innerHTML = D.cockpit.map(card).join(""); }
+
+  // ── 阶段 1.6：录入新错题地址 → FDL 自动分析（2026-09-09 King 需求）──
+  (function () {
+    var FDL_API = "http://127.0.0.1:8765";  // audit-ok: 本地服务地址，非外部依赖
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "+ 录入新错题";
+    btn.style.cssText = "margin-bottom:14px;padding:8px 18px;border:2px solid var(--gold);"
+      + "background:var(--gold);color:#fff;border-radius:8px;cursor:pointer;"
+      + "font-family:var(--hand);font-size:14px;font-weight:500";
+    cc.parentNode.insertBefore(btn, cc);
+
+    var overlay = document.createElement("div");
+    overlay.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);"
+      + "z-index:9999;align-items:center;justify-content:center";
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:12px;padding:24px;width:min(520px,92vw);'
+      + 'box-shadow:0 8px 32px rgba(0,0,0,.2);font-family:var(--hand)">'
+      + '<h3 style="margin:0 0 6px;font-size:16px">录入新错题</h3>'
+      + '<p style="margin:0 0 12px;font-size:12px;color:#666">填入错题照片的<b>本地路径或文件夹</b>，FDL 将自动完成：预处理 → 红黑分离 → OCR 识别 → 错因归因 → 入错题本。</p>'
+      + '<input id="fde-url" type="text" placeholder="如：~/错题照片文件夹 或单张图片路径" '
+      + 'style="width:100%;box-sizing:border-box;padding:10px;border:1.5px solid var(--ink);'
+      + 'border-radius:8px;font-size:13px;margin-bottom:12px">'
+      + '<div id="fde-progress-wrap" style="display:none;margin-bottom:12px">'
+      +   '<div style="height:14px;background:#eee;border-radius:7px;overflow:hidden">'
+      +     '<div id="fde-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#2f9e6e,#5fc494);transition:width .4s"></div>'
+      +   '</div>'
+      +   '<div id="fde-msg" style="font-size:12px;color:#666;margin-top:6px">准备中…</div>'
+      + '</div>'
+      + '<div id="fde-error" style="display:none;margin-bottom:12px;padding:10px;background:#FFF3F0;'
+      +   'border-radius:8px;font-size:12px;color:#A32D2D"></div>'
+      + '<div style="display:flex;gap:10px;justify-content:flex-end">'
+      +   '<button id="fde-cancel" style="padding:8px 16px;border:1px solid #ccc;background:#fff;'
+      +     'border-radius:8px;cursor:pointer;font-family:var(--hand)">取消</button>'
+      +   '<button id="fde-submit" style="padding:8px 20px;border:none;background:var(--gold);'
+      +     'color:#fff;border-radius:8px;cursor:pointer;font-family:var(--hand);font-weight:500">提交并开始分析</button>'
+      + '</div></div>';
+    document.body.appendChild(overlay);
+
+    var $ = function (id) { return document.getElementById(id); };
+    var open = function () { overlay.style.display = "flex"; $("fde-url").focus(); };
+    var close = function () { overlay.style.display = "none"; };
+    btn.addEventListener("click", open);
+    $("fde-cancel").addEventListener("click", close);
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+
+    var setProgress = function (percent, msg) {
+      $("fde-progress-wrap").style.display = "block";
+      $("fde-bar").style.width = Math.max(0, Math.min(100, percent)) + "%";
+      $("fde-msg").textContent = msg || "";
+    };
+    var showError = function (html) {
+      $("fde-error").style.display = "block";
+      $("fde-error").innerHTML = html;
+    };
+    var reset = function () {
+      $("fde-error").style.display = "none";
+      $("fde-progress-wrap").style.display = "none";
+      $("fde-bar").style.width = "0%";
+    };
+
+    var poll = function (jobId) {
+      var timer = setInterval(function () {
+        fetch(FDL_API + "/api/progress?id=" + jobId)
+          .then(function (r) { return r.json(); })
+          .then(function (s) {
+            setProgress(s.percent || 0, s.message || "");
+            if (s.done) {
+              clearInterval(timer);
+              if (s.error) {
+                showError("分析失败：" + s.error + "<br>请检查路径后重试，或查看终端日志。");
+                $("fde-submit").disabled = false; $("fde-submit").textContent = "重新提交";
+              } else {
+                setProgress(100, "");
+                var nr = (s.needs_review_detail || []).length;
+                var okN = (s.result && s.result.ok) || 0;
+                $("fde-msg").innerHTML = "<b style='color:#2f9e6e'>分析完成 — " + (s.message || "")
+                  + "</b><br><span style='font-size:11px;color:#999'>刷新报告即可看到新错题（生成报告 → 5 秒）</span>"
+                  + '<br><a href="javascript:void(0)" onclick="window.__gotoReview(\'needs-review-block\')" '
+                  + 'style="font-size:13px;color:var(--gold);text-decoration:underline">查看分析结果'
+                  + (nr > 0 ? "（" + nr + " 张待人工确认，含原图与原因）" : "（" + okN + " 张已入库）") + '</a>';
+                $("fde-submit").textContent = "完成";
+                $("fde-submit").disabled = false;
+                $("fde-submit").onclick = function () { close(); reset(); };
+              }
+            }
+          })
+          .catch(function () {
+            clearInterval(timer);
+            showError("与本地分析服务的连接中断，请确认 fdl_serve.py 仍在运行。");
+            $("fde-submit").disabled = false;
+          });
+      }, 600);
+    };
+
+    $("fde-submit").addEventListener("click", function () {
+      var path = ($("fde-url").value || "").trim();
+      if (!path) { showError("请先填入错题照片的本地路径或文件夹。"); return; }
+      reset();
+      $("fde-submit").disabled = true;
+      $("fde-submit").textContent = "提交中…";
+      setProgress(4, "连接本地分析服务…");
+      fetch(FDL_API + "/api/enqueue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: path }),
+      })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          showError((res.j && res.j.error) || "提交失败");
+          $("fde-submit").disabled = false;
+          $("fde-submit").textContent = "重新提交";
+          return;
+        }
+        setProgress(8, "已受理，开始分析…");
+        poll(res.j.job_id);
+      })
+      .catch(function () {
+        // file:// 打开或服务未启动 → 降级指引
+        showError(
+          "<b>未检测到 FDL 本地分析服务。</b><br>"
+          + "启动方式（任选）：① 双击桌面「启动FDL分析服务」；② 终端运行 "
+          + "<code style='background:#f5f0e6;padding:2px 6px;border-radius:4px'>"
+          + "python scripts/fdl_serve.py --daemon</code><br>"
+          + "启动后重新点击「提交并开始分析」即可。"
+          + "<span style='font-size:11px;color:#999'>服务只监听本机 127.0.0.1，不暴露外网。</span>"
+        );
+        $("fde-submit").disabled = false;
+        $("fde-submit").textContent = "重新提交";
+      });
+    });
+
+    // ── 跳转：切到指定 panel + 滚动（King 2026-09-10 修：原版仅在 IIFE 内 +
+    // scrollIntoView 无可见性检查，锚点若在隐藏面板则无效）。升级：
+    // 1) 暴露到 window（驾驶舱任何位置都可调用，不依赖加载顺序）
+    // 2) 三阶段：切 tab → 唤醒目标（active class 强制加）→ 滚到目标
+    // 3) anchorId 为空时滚到 review panel 顶部（不要求必须存在 #xxx）
+    window.__gotoReview = function (anchorId) {
+      try { close(); } catch (e) {}
+      var tab = document.querySelector('nav.tabs button[data-panel="review"]');
+      if (tab) { tab.click(); }
+      // 强制确保目标 panel 处于 active（防御 click 没触发 aria-selected/active 的场景）
+      setTimeout(function () {
+        var reviewPanel = document.getElementById("review");
+        if (reviewPanel) {
+          reviewPanel.classList.add("active");
+        }
+        document.querySelectorAll("section.panel").forEach(function (s) {
+          if (s.id !== "review") { s.classList.remove("active"); }
+        });
+        // 顶部滚动到 tab 区域，让用户看到"今日复习"页头
+        try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
+        var target = anchorId ? document.getElementById(anchorId) : null;
+        if (target) {
+          // 滚到目标（offsetTop 在 panel 内）—— panel 可视后才有效
+          setTimeout(function () {
+            try { target.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+          }, 60);
+        }
+      }, 120);
+    };
+
+    // ── 2026-09-13 King #4/#5/#6：全局「问题编号 → 照片卡片页」跳转 ──
+    // 任何位置（反馈闭环待办 / 详情弹层 / 干预动作 / 错因诊断）的 #编号 链接
+    // 统一经此函数：切到「今日复习」页 → 定位 [data-mcard=mid] → 高亮脉冲。
+    // 若卡片被「已解决/已驯服」筛选隐藏 → 自动勾选开关重渲染后重试。
+    window.__fdJumpToMistake = function (mid) {
+      try {
+        var dClose = document.getElementById("detail-close");
+        var dPanel = document.getElementById("detail-panel");
+        if (dClose && dPanel && dPanel.classList.contains("open")) { dClose.click(); }
+      } catch (e) {}
+      window.__gotoReview(null);
+      setTimeout(function () {
+        var sel = '[data-mcard="' + mid + '"]';
+        var card = document.querySelector(sel);
+        if (!card) {
+          var tg = document.getElementById("show-resolved-toggle");
+          if (tg && !tg.checked) {
+            tg.checked = true;
+            tg.dispatchEvent(new Event("change"));
+            card = document.querySelector(sel);
+          }
+        }
+        if (card) {
+          try { card.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+          card.classList.add("fd-jump-highlight");
+          setTimeout(function () { card.classList.remove("fd-jump-highlight"); }, 2600);
+        } else {
+          window.__fdJumpToast("未找到 #" + mid + " 的卡片（可能不在错题清单中）");
+        }
+      }, 260);
+    };
+    // 轻量提示条（找不到目标时用；自动消失，不打断）
+    window.__fdJumpToast = function (msg) {
+      var t = document.getElementById("fd-jump-toast");
+      if (!t) {
+        t = document.createElement("div");
+        t.id = "fd-jump-toast";
+        t.style.cssText = "position:fixed;left:50%;bottom:28px;transform:translateX(-50%);"
+          + "background:var(--ink);color:#FFFDF5;padding:8px 18px;border-radius:8px;"
+          + "font-size:13px;font-family:var(--hand);z-index:9999;box-shadow:2px 3px 0 rgba(43,43,43,.25)";
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.display = "block";
+      clearTimeout(window.__fdJumpToastTimer);
+      window.__fdJumpToastTimer = setTimeout(function () { t.style.display = "none"; }, 2600);
+    };
+    // 全局委托：任何 a.fd-mid-link（问题编号）→ 跳转到今日复习卡片。
+    // 用委托而非逐元素绑定：这些块由 innerHTML 重建，逐元素绑定会随重渲染失效。
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest && e.target.closest("a.fd-mid-link");
+      if (!a) { return; }
+      e.preventDefault();
+      var mid = parseInt(a.getAttribute("data-mid"), 10);
+      if (!isNaN(mid)) { window.__fdJumpToMistake(mid); }
+    });
+  })();
+
+  // ── 上传复习资料（2026-09-12 King 需求）─────────────────────────
+  // 与驾驶舱「录入新错题」互补：本按钮在「今日复习」页，支持
+  // 音频 / 图片 / 视频 / 文档 四类资料 → 预处理 → 识别 → FDL 分析 →
+  // 参数全面更新（驾驶舱数字卡 / 近 14 天趋势随库刷新）。
+  (function () {
+    var FDL_API = "http://127.0.0.1:8765";  // audit-ok: 本地服务地址，非外部依赖
+    var rlist = document.getElementById("review-list");
+    if (!rlist) { return; }
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "res-upload-btn";
+    btn.textContent = "+ 上传复习资料";
+    btn.style.cssText = "margin-bottom:14px;padding:8px 18px;border:2px solid var(--gold);"
+      + "background:var(--gold);color:#fff;border-radius:8px;cursor:pointer;"
+      + "font-family:var(--hand);font-size:14px;font-weight:500";
+    rlist.parentNode.insertBefore(btn, rlist);
+
+    var overlay = document.createElement("div");
+    overlay.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);"
+      + "z-index:9999;align-items:center;justify-content:center";
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:12px;padding:24px;width:min(560px,92vw);'
+      + 'box-shadow:0 8px 32px rgba(0,0,0,.2);font-family:var(--hand)">'
+      + '<h3 style="margin:0 0 6px;font-size:16px">上传复习资料</h3>'
+      + '<p style="margin:0 0 12px;font-size:12px;color:#666">填入资料的<b>本地路径（文件或文件夹）</b>，'
+      + '支持 <b>音频 m4a/mp3/wav · 图片 jpg/png · 视频 mp4/mov · 文档 txt/md/pdf</b>。'
+      + 'FDL 将自动完成：预处理 → 资料识别 → 分析 → 参数更新（驾驶舱数字卡与趋势随库刷新）。</p>'
+      + '<input id="res-path" type="text" placeholder="如：~/错题照片文件夹/05-复习 或单个音频文件" '
+      + 'style="width:100%;box-sizing:border-box;padding:10px;border:1.5px solid var(--ink);'
+      + 'border-radius:8px;font-size:13px;margin-bottom:12px">'
+      + '<div id="res-progress-wrap" style="display:none;margin-bottom:12px">'
+      +   '<div style="display:flex;gap:6px;margin-bottom:6px" id="res-stages"></div>'
+      +   '<div style="height:14px;background:#eee;border-radius:7px;overflow:hidden">'
+      +     '<div id="res-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#2f9e6e,#5fc494);transition:width .4s"></div>'
+      +   '</div>'
+      +   '<div id="res-msg" style="font-size:12px;color:#666;margin-top:6px">准备中…</div>'
+      + '</div>'
+      + '<div id="res-error" style="display:none;margin-bottom:12px;padding:10px;background:#FFF3F0;'
+      +   'border-radius:8px;font-size:12px;color:#A32D2D"></div>'
+      + '<div id="res-done" style="display:none;margin-bottom:12px;padding:10px;background:#F2F9F4;'
+      +   'border-radius:8px;font-size:12px;color:#2F6E4E"></div>'
+      + '<div style="display:flex;gap:10px;justify-content:flex-end">'
+      +   '<button id="res-cancel" style="padding:8px 16px;border:1px solid #ccc;background:#fff;'
+      +     'border-radius:8px;cursor:pointer;font-family:var(--hand)">取消</button>'
+      +   '<button id="res-submit" style="padding:8px 20px;border:none;background:var(--gold);'
+      +     'color:#fff;border-radius:8px;cursor:pointer;font-family:var(--hand);font-weight:500">提交并开始处理</button>'
+      + '</div></div>';
+    document.body.appendChild(overlay);
+
+    var $ = function (id) { return document.getElementById(id); };
+    var open = function () { overlay.style.display = "flex"; $("res-path").focus(); };
+    var close = function () { overlay.style.display = "none"; };
+    btn.addEventListener("click", open);
+    $("res-cancel").addEventListener("click", close);
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+
+    // 四阶段指示（与后端 stage 字段一一对应）
+    var STAGES = [
+      ["preprocess", "预处理"], ["recognize", "资料识别"],
+      ["analyze", "FDL 分析"], ["refresh", "参数更新"]
+    ];
+    var stageIdx = { preprocess: 0, recognize: 1, analyze: 2, refresh: 3 };
+    var paintStages = function (cur) {
+      var box = $("res-stages");
+      var ci = stageIdx[cur];
+      if (ci === undefined) { ci = -1; }
+      box.innerHTML = STAGES.map(function (s, i) {
+        var done = i < ci, now = i === ci;
+        var bg = done ? "#2f9e6e" : (now ? "var(--gold)" : "#eee");
+        var fg = (done || now) ? "#fff" : "#999";
+        return '<span style="flex:1;text-align:center;padding:3px 0;border-radius:6px;'
+          + 'font-size:11px;background:' + bg + ';color:' + fg + '">'
+          + (done ? "[完成] " : "") + s[1] + '</span>';
+      }).join("");
+    };
+    var setProgress = function (stage, percent, msg) {
+      $("res-progress-wrap").style.display = "block";
+      paintStages(stage);
+      $("res-bar").style.width = Math.max(0, Math.min(100, percent)) + "%";
+      $("res-msg").textContent = msg || "";
+    };
+    var showError = function (html) {
+      $("res-error").style.display = "block";
+      $("res-error").innerHTML = html;
+    };
+    var reset = function () {
+      $("res-error").style.display = "none";
+      $("res-done").style.display = "none";
+      $("res-progress-wrap").style.display = "none";
+      $("res-bar").style.width = "0%";
+      paintStages("preprocess");
+    };
+
+    var poll = function (jobId) {
+      var timer = setInterval(function () {
+        fetch(FDL_API + "/api/progress?id=" + jobId)
+          .then(function (r) { return r.json(); })
+          .then(function (s) {
+            setProgress(s.stage, s.percent || 0, s.message || "");
+            if (s.done) {
+              clearInterval(timer);
+              if (s.error) {
+                showError("处理失败：" + s.error + "<br>请检查路径后重试，或查看终端日志。");
+                $("res-submit").disabled = false; $("res-submit").textContent = "重新提交";
+              } else {
+                setProgress("refresh", 100, "");
+                var nr = (s.needs_review_detail || []).length;
+                var rr = s.result || {};
+                var kinds = rr.by_kind || {};
+                var kindTxt = Object.keys(kinds).map(function (k) { return k + " " + kinds[k]; }).join(" · ");
+                var msg = "资料处理完成 — " + (kindTxt || (rr.total + " 个"));
+                if (rr.applied && rr.applied.length) {
+                  msg += " · 复习记录更新 " + rr.applied.length + " 条";
+                }
+                msg += " · 报告已刷新";
+                var html = "<b>" + msg + "</b>"
+                  + "<br><span style='font-size:11px;color:#999'>驾驶舱数字卡 / 近 14 天趋势已随库更新，刷新页面即可看到</span>";
+                if (nr > 0) {
+                  html += "<br><a href='javascript:void(0)' onclick='window.__gotoReview(\"needs-review-block\")' "
+                    + "style='font-size:13px;color:var(--gold);text-decoration:underline'>"
+                    + "查看 " + nr + " 个待人工处理项（含原图与原因）</a>";
+                }
+                $("res-done").style.display = "block";
+                $("res-done").innerHTML = html;
+                $("res-msg").textContent = "";
+                $("res-submit").textContent = "完成";
+                $("res-submit").disabled = false;
+                $("res-submit").onclick = function () { close(); reset(); };
+              }
+            }
+          })
+          .catch(function () {
+            clearInterval(timer);
+            showError("与本地分析服务的连接中断，请确认 fdl_serve.py 仍在运行。");
+            $("res-submit").disabled = false;
+          });
+      }, 700);
+    };
+
+    $("res-submit").addEventListener("click", function () {
+      var path = ($("res-path").value || "").trim();
+      if (!path) { showError("请先填入复习资料的本地路径或文件夹。"); return; }
+      reset();
+      $("res-submit").disabled = true;
+      $("res-submit").textContent = "提交中…";
+      setProgress("preprocess", 3, "连接本地分析服务…");
+      fetch(FDL_API + "/api/enqueue_resource", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: path })
+      })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          showError((res.j && res.j.error) || "提交失败");
+          $("res-submit").disabled = false;
+          $("res-submit").textContent = "重新提交";
+          return;
+        }
+        setProgress("preprocess", 6, "已受理，开始处理…");
+        poll(res.j.job_id);
+      })
+      .catch(function () {
+        showError(
+          "<b>未检测到 FDL 本地分析服务。</b><br>"
+          + "启动方式（任选）：① 双击桌面「启动FDL分析服务」；② 终端运行 "
+          + "<code style='background:#f5f0e6;padding:2px 6px;border-radius:4px'>"
+          + "python scripts/fdl_serve.py --daemon</code><br>"
+          + "启动后重新点击「提交并开始处理」即可。"
+        );
+        $("res-submit").disabled = false;
+        $("res-submit").textContent = "重新提交";
+      });
+    });
+  })();
+
+
+  // 占位：以上 IIFE 内已把 __gotoReview 暴露到 window；下方模块使用它。
+
+  // ── LLM Pareto 干预分析（King 2026-09-12：错因诊断模块的「干预动作」升级）──
+  // 数据：D.pareto_intervention（LLM 基于错因分布+反馈，按 Pareto 识别主要根因
+  // 并生成干预措施；由 scripts/fdl_intervention.py 触发落库，报告只读展示）。
+  // 无分析记录时静默不渲染（静态 4 类映射仍在上面展示，功能不缺失）。
+  (function () {
+    var P = D.pareto_intervention;
+    var cc = document.getElementById("cockpit-cards");
+    if (!P || !P.roots || !cc) { return; }
+    var esc = function (s) {
+      return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    };
+    var blk = document.createElement("div");
+    blk.id = "pareto-intervention-block";
+    blk.style.cssText = "margin-bottom:14px;padding:14px;border:1.5px solid var(--gold);"
+      + "border-radius:8px;background:#FFFBF2";
+    // 2026-09-13 King #5：标题字号加大 + 内容精简 + 附照片卡片页链接。
+    // 每个根因行附「看错题卡（N）」——跳转到今日复习页该错因对应的照片卡片。
+    var _dmIds = D.diagnosis_mistake_ids || {};
+    var rootRows = P.roots.map(function (r) {
+      var ids = _dmIds[r.diagnosis] || [];
+      var cardLink = ids.length
+        ? '<a href="javascript:void(0)" class="fd-mid-link" data-mid="' + ids[0] + '" '
+          + 'title="跳转到该错因的照片卡片（今日复习页）" '
+          + 'style="font-size:12px;color:var(--gold);text-decoration:underline;margin-left:8px">'
+          + '看错题卡（' + ids.length + '）</a>'
+        : "";
+      var acts = (r.actions || []).map(function (a) {
+        return '<div style="padding:2px 0 2px 14px;font-size:12px;color:var(--ink)">'
+          + '→ ' + esc(a) + '</div>';
+      }).join("");
+      var ev = (r.evidence || "");
+      if (ev.length > 72) { ev = ev.slice(0, 72) + "…"; }
+      return '<div style="padding:8px 0;border-bottom:1px dashed var(--line)">'
+        + '<div style="font-size:13px;font-weight:500;color:var(--ink)">'
+        + '[' + r.priority + '] ' + esc(r.diagnosis) + cardLink
+        + '　<span style="font-weight:400;color:var(--text-secondary)">占比 '
+        + (Number(r.share) * 100).toFixed(1) + '% · 累计 '
+        + (Number(r.cumulative) * 100).toFixed(1) + '%</span></div>'
+        + '<div style="font-size:12px;color:var(--text-secondary);margin:2px 0 4px">'
+        + '证据：' + esc(ev) + '</div>'
+        + '<div style="font-weight:400;font-size:12px;color:var(--text-secondary)">干预措施：</div>'
+        + acts + '</div>';
+    }).join("");
+    blk.innerHTML =
+      '<h3 style="margin:0 0 4px;font-size:17px">干预动作</h3>'
+      + '<p class="note" style="margin:0 0 8px;font-size:11px">'
+      + 'LLM 按 Pareto 原则识别贡献约 80% 问题的主要根因（' + (P.vital_few_count || P.roots.length)
+      + ' 项）并生成措施｜分析于 ' + esc((P.analyzed_at || "").slice(0, 16)) + '。</p>'
+      + rootRows
+      + '<p class="note" style="margin:8px 0 0;font-size:11px">' + esc(P.summary || "")
+      + '　<a href="javascript:void(0)" id="pareto-goto-review" '
+      + 'style="color:var(--gold);text-decoration:underline">去今日复习页看错题卡</a></p>';
+    var dx = document.getElementById("diagnosis-block");
+    var anchor = dx || cc;
+    anchor.parentNode.insertBefore(blk, anchor.nextSibling);
+    var prGoto = document.getElementById("pareto-goto-review");
+    if (prGoto) {
+      prGoto.addEventListener("click", function () { window.__gotoReview(null); });
+    }
+  })();
+
+
+  // ── 待人工处理（King 2026-09-12 规则：全部待人工项必须在驾驶舱/今日复习可见）──
+  // 数据源：D.pending_human（fdl_core/report/pending_human.py 按登记表聚合）。
+  // 驾驶舱：汇总卡（各类计数 + 跳转）；今日复习：挂载提案逐条复核 + 归因提案展示。
+  (function () {
+    var PH = D.pending_human;
+    if (!PH) { return; }
+    var FDL_API = "http://127.0.0.1:8765";  // audit-ok: 本地服务地址，非外部依赖
+
+    var esc = function (s) {
+      return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    };
+
+    // ── ① 驾驶舱：待人工处理汇总卡（在录入按钮之后、数字卡之前）──
+    (function () {
+      var cc = document.getElementById("cockpit-cards");
+      if (!cc) { return; }
+      var dash = (PH.dashboard || []);
+      var review = (PH.review || []);
+      var all = (PH.all || []);
+      if (!all.length) { return; }
+
+      var blk = document.createElement("div");
+      blk.id = "pending-summary-block";
+      blk.style.cssText = "margin-bottom:14px;padding:14px;border:1.5px solid #E7CFA0;"
+        + "border-radius:8px;background:#FFFBF2";
+      var rows = all.map(function (e) {
+        var go = e.page === "review"
+          ? "window.__gotoReview('" + e.block_id + "')"
+          : "window.__gotoAnchor('" + e.block_id + "')";
+        var tag = e.page === "review" ? "今日复习" : "本页";
+        var color = e.count > 0 ? "#B4552D" : "#9A988F";
+        return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;'
+          + 'border-bottom:1px dashed var(--line);font-size:13px">'
+          + '<span style="flex:1;color:var(--ink)">' + esc(e.label)
+          + ' <span style="font-size:11px;color:var(--text-secondary)">· ' + esc(e.action) + '</span></span>'
+          + '<b style="color:' + color + ';min-width:2.5em;text-align:right">' + e.count + '</b>'
+          + '<a href="javascript:void(0)" onclick="' + go + '" style="color:var(--gold);'
+          + 'text-decoration:underline;font-size:12px;min-width:4em;text-align:right">' + tag + '</a></div>';
+      }).join("");
+      blk.innerHTML =
+        '<h3 style="margin:0 0 4px;font-size:14px">待人工处理（全部 ' + PH.total + ' 项）'
+        + ' · 规则：任何待人工项必须在驾驶舱或今日复习可见</h3>'
+        + '<p class="note" style="margin:0 0 6px;font-size:11px">'
+        + '点右侧「今日复习 / 本页」直接跳到对应处理区。</p>'
+        + rows;
+      cc.parentNode.insertBefore(blk, cc);
+    })();
+
+    // ── ② 今日复习：KP 挂载提案逐条复核（71 条存量的处理入口）──
+    (function () {
+      var src = (PH.review || []).find(function (e) { return e.key === "kp_mount_proposal"; });
+      var host = document.getElementById("review-list");
+      if (!src || !src.count || !host) { return; }
+
+      var blk = document.createElement("div");
+      blk.id = "kp-proposals-block";
+      blk.style.cssText = "margin-bottom:14px;padding:14px;border:1.5px solid #C9DCC9;"
+        + "border-radius:8px;background:#F7FBF7";
+      blk.innerHTML =
+        '<h3 style="margin:0 0 4px;font-size:14px">知识点挂载待复核（'
+        + src.count + ' 条）<span id="kpp-count-detail" style="font-size:11px;font-weight:400;color:var(--text-secondary)"></span></h3>'
+        + '<p class="note" style="margin:0 0 8px;font-size:11px">' + esc(src.hint) + '</p>'
+        + '<div style="margin-bottom:8px"><button id="kpp-accept-hi" style="padding:6px 14px;'
+        + 'border:2px solid var(--ink);background:var(--panel);border-radius:var(--sketch-radius);'
+        + 'cursor:pointer;font-family:var(--hand);font-size:13px">批量同意「高置信 ≥ 0.60」</button>'
+        + '<span id="kpp-status" style="margin-left:10px;font-size:12px;color:var(--text-secondary)"></span></div>'
+        + '<div id="kpp-list"></div>';
+      host.parentNode.insertBefore(blk, host);
+
+      var listBox = blk.querySelector("#kpp-list");
+      var status = blk.querySelector("#kpp-status");
+      var shown = 0, PAGE = 20, items = [];
+
+      var renderRows = function () {
+        var next = items.slice(shown, shown + PAGE);
+        next.forEach(function (it) {
+          var row = document.createElement("div");
+          row.setAttribute("data-proposal-id", String(it.id));
+          row.style.cssText = "display:flex;align-items:center;gap:8px;padding:5px 0;"
+            + "border-bottom:1px dashed var(--line);font-size:12px";
+          // 2026-09-13 King #2 修复：区分两类 PROPOSED——
+          //  ① 有目标 KP（可复核）：显示 建议挂载 X + 置信分 + 同意/驳回；
+          //  ② 无目标 KP（无可匹配项，存量 49 条全为此类）：**不显示 0.0 分**
+          //     （0.0 是"未产出有效匹配"的占位值，不是低置信），显示"无法匹配"+
+          //     理由摘要，且**不提供"同意"**（后端无可采纳项）；仅可「驳回（忽略）」。
+          var hasTarget = it.kp_id != null && it.kp_id !== 0;
+          if (!hasTarget) {
+            var why = (it.rationale || "").slice(0, 64);
+            row.innerHTML =
+              '<span style="min-width:5.5em;color:var(--text-secondary)">#'
+              + esc(it.mistake_id) + '</span>'
+              + '<span style="flex:1;color:var(--text-secondary)">无法匹配现有知识点'
+              + '（待新增/重跑匹配）' + (why ? ' · ' + esc(why) : '') + '</span>'
+              + '<span style="color:#9A988F;min-width:3em;text-align:right" '
+              + 'title="未产出有效匹配（非低置信分）">—</span>';
+            var ignoreBtn = document.createElement("button");
+            ignoreBtn.textContent = "驳回（忽略）";
+            ignoreBtn.style.cssText = "padding:3px 10px;border:1px solid #A32D2D;background:#fff;"
+              + "color:#A32D2D;border-radius:6px;cursor:pointer;font-size:12px;font-family:var(--hand)";
+            ignoreBtn.addEventListener("click", function () {
+              ignoreBtn.disabled = true;
+              fetch(FDL_API + "/api/kp/proposals/" + it.id + "/reject", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ decided_by: "FRANK", reason: "无法匹配（人工忽略）" })
+              })
+              .then(function (r) { return r.json(); })
+              .then(function (j) {
+                if (j && j.ok) {
+                  row.style.opacity = "0.45";
+                  row.style.textDecoration = "line-through";
+                  status.textContent = "已忽略 #" + it.mistake_id + (j.already ? "（此前已处理，幂等通过）" : "");
+                } else {
+                  ignoreBtn.disabled = false;
+                  status.textContent = "操作失败：" + ((j && j.error) || "未知错误");
+                }
+              })
+              .catch(function () {
+                ignoreBtn.disabled = false;
+                status.textContent = "服务未连接（fdl_serve 未运行？）";
+              });
+            });
+            row.appendChild(ignoreBtn);
+            listBox.appendChild(row);
+            return;
+          }
+          var conf = it.confidence == null ? "—" : Number(it.confidence).toFixed(2);
+          var confColor = (it.confidence >= 0.6) ? "#2F6E4E" : "#9A6A12";
+          row.innerHTML =
+            '<span style="min-width:5.5em;color:var(--text-secondary)">#' + esc(it.mistake_id) + '</span>'
+            + '<span style="flex:1">建议挂载 <b>' + esc(it.summary || "—") + '</b></span>'
+            + '<span style="color:' + confColor + ';min-width:3em;text-align:right">' + conf + '</span>';
+          var okBtn = document.createElement("button");
+          okBtn.textContent = "同意";
+          okBtn.style.cssText = "padding:3px 10px;border:1px solid #2F6E4E;background:#fff;"
+            + "color:#2F6E4E;border-radius:6px;cursor:pointer;font-size:12px;font-family:var(--hand)";
+          var noBtn = document.createElement("button");
+          noBtn.textContent = "驳回";
+          noBtn.style.cssText = "padding:3px 10px;border:1px solid #A32D2D;background:#fff;"
+            + "color:#A32D2D;border-radius:6px;cursor:pointer;font-size:12px;font-family:var(--hand)";
+          var act = function (verb) {
+            okBtn.disabled = noBtn.disabled = true;
+            fetch(FDL_API + "/api/kp/proposals/" + it.id + "/" + verb, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ decided_by: "FRANK" })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+              if (j && j.ok) {
+                row.style.opacity = "0.45";
+                row.style.textDecoration = "line-through";
+                // 幂等（2026-09-13）：后端对"已采纳/已驳回"的重复操作返回 ok + already，
+                // 前端按成功处理并标注——不再误报"操作失败：提案已被采纳"。
+                var dup = j.already ? "（此前已处理，幂等通过）" : "";
+                status.textContent = (verb === "accept" ? "已同意" : "已驳回")
+                  + " #" + it.mistake_id
+                  + (verb === "accept" && !j.already ? " —— 挂载率 +1" : "") + dup;
+              } else {
+                okBtn.disabled = noBtn.disabled = false;
+                status.textContent = "操作失败：" + ((j && j.error) || "未知错误")
+                  + "（确认 fdl_serve 在运行）";
+              }
+            })
+            .catch(function () {
+              okBtn.disabled = noBtn.disabled = false;
+              status.textContent = "服务未连接（fdl_serve 未运行？）";
+            });
+          };
+          okBtn.addEventListener("click", function () { act("accept"); });
+          noBtn.addEventListener("click", function () { act("reject"); });
+          row.appendChild(okBtn);
+          row.appendChild(noBtn);
+          listBox.appendChild(row);
+        });
+        shown += next.length;
+        if (shown < items.length) {
+          var more = document.createElement("a");
+          more.href = "javascript:void(0)";
+          more.textContent = "显示更多（还有 " + (items.length - shown) + " 条）";
+          more.style.cssText = "display:inline-block;margin-top:6px;font-size:12px;"
+            + "color:var(--gold);text-decoration:underline";
+          more.addEventListener("click", function () { more.remove(); renderRows(); });
+          listBox.appendChild(more);
+        }
+      };
+
+      // 数据：从提案端点拉全量（含理由），按置信降序
+      fetch(FDL_API + "/api/kp/proposals?status=PROPOSED&limit=200")
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          items = (j.items || j.proposals || []).map(function (p) {
+            return { id: p.id, mistake_id: p.mistake_id,
+                     kp_id: p.proposed_kp_id,   // #2：区分"可复核"与"无法匹配"
+                     rationale: p.rationale || "",
+                     summary: p.proposed_kp_code || p.proposed_kp_name || "—",
+                     confidence: p.confidence };
+          }).sort(function (a, b) { return (b.confidence || 0) - (a.confidence || 0); });
+          if (!items.length) { blk.style.display = "none"; return; }
+          // 头部计数细化：可复核（有目标 KP） vs 无法匹配（待新增/重跑）
+          var nOk = items.filter(function (x) { return x.kp_id != null && x.kp_id !== 0; }).length;
+          var nNo = items.length - nOk;
+          var cd = document.getElementById("kpp-count-detail");
+          if (cd) {
+            cd.textContent = "（可复核 " + nOk + " · 无法匹配 " + nNo + "）";
+          }
+          renderRows();
+        })
+        .catch(function () {
+          listBox.textContent = "（无法连接本地服务读取提案列表——请确认 fdl_serve 在运行）";
+        });
+
+      // 批量同意高置信（≥0.60）：逐条调用，UI 实时反馈
+      // 2026-09-13 修复：批量完成后把对应行标记为"已处理"（禁用按钮 + 划线），
+      //    根因——原实现不更新行状态，用户随后再点单条"同意"会被后端判"已采纳"，
+      //    前端误报"操作失败：提案已被采纳"（实为成功）。
+      blk.querySelector("#kpp-accept-hi").addEventListener("click", function () {
+        // #2：批量同意仅作用于"有目标 KP"的行（无法匹配行没有可采纳项）
+        var hi = items.filter(function (x) {
+          return (x.confidence || 0) >= 0.60 && x.kp_id != null && x.kp_id !== 0;
+        });
+        if (!hi.length) { status.textContent = "没有 ≥0.60 的可复核提案"; return; }
+        if (!window.confirm("将同意 " + hi.length + " 条高置信（≥0.60）挂载提案，"
+            + "直接写入错题→知识点挂载。继续？")) { return; }
+        status.textContent = "批量处理中…";
+        var rowsById = {};
+        listBox.querySelectorAll("div[data-proposal-id]").forEach(function (r) {
+          rowsById[r.getAttribute("data-proposal-id")] = r;
+        });
+        var i = 0, okN = 0, dupN = 0;
+        var step = function () {
+          if (i >= hi.length) {
+            status.textContent = "批量完成：同意 " + okN + " / " + hi.length
+              + " 条" + (dupN ? "（其中 " + dupN + " 条此前已处理，幂等通过）" : "")
+              + "。刷新报告可见挂载率变化。";
+            return;
+          }
+          var it = hi[i++];
+          fetch(FDL_API + "/api/kp/proposals/" + it.id + "/accept", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ decided_by: "FRANK" })
+          })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (j && j.ok) {
+              if (j.already) { dupN += 1; } else { okN += 1; }
+              // 行标记：禁用双按钮 + 划线（防重复点击 → 不再出现"已被采纳"误报）
+              var row = rowsById[String(it.id)];
+              if (row) {
+                row.style.opacity = "0.45";
+                row.style.textDecoration = "line-through";
+                row.querySelectorAll("button").forEach(function (b) { b.disabled = true; });
+              }
+            }
+            step();
+          })
+          .catch(function () { step(); });
+        };
+        step();
+      });
+    })();
+
+    // ── ③ 今日复习：归因提案展示（只读；复核走 attribution 工具）──
+    (function () {
+      var src = (PH.review || []).find(function (e) { return e.key === "attribution_proposal"; });
+      var host = document.getElementById("kp-candidates-block");
+      if (!src || !src.count || !host) { return; }
+      var blk = document.createElement("div");
+      blk.id = "attr-proposals-block";
+      blk.style.cssText = "margin-bottom:14px;padding:14px;border:1.5px dashed var(--line);"
+        + "border-radius:8px;background:#FDFBF6";
+      blk.innerHTML = '<h3 style="margin:0 0 4px;font-size:14px">错因归因待复核（'
+        + src.count + ' 条）</h3>'
+        + '<p class="note" style="margin:0;font-size:11px">' + esc(src.hint)
+        + '。复核操作：终端运行 <code>python -m fdl_core.mistakes.attribution_review</code></p>'
+        + (src.samples || []).map(function (s) {
+            return '<div style="font-size:12px;padding:4px 0;border-bottom:1px dashed var(--line)">'
+              + '#' + esc(s.mistake_id) + ' · ' + esc(s.summary) + '</div>';
+          }).join("");
+      host.parentNode.insertBefore(blk, host.nextSibling);
+    })();
+
+    // ── ④ 通用锚点跳转（驾驶舱内块定位用；__gotoReview 只管 review 页）──
+    window.__gotoAnchor = function (anchorId) {
+      var el = document.getElementById(anchorId);
+      if (el) {
+        try { el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+      }
+    };
+  })();
+
+
+  // ── PPT P16 反馈层双指标 + 干预动作待办（OpenMAIC 借鉴 B · 2026-09-09）──
+  (function () {
+    if (!D.feedback_kpi && !D.intervention_summary) return;
+    var block = document.createElement("div");
+    block.id = "feedback-kpi-block";
+    block.style.cssText = "margin-bottom:14px;padding:14px;border:1px solid var(--gold);border-radius:8px;background:#FFFBF2";
+    var k = D.feedback_kpi || {};
+    var iv = D.intervention_summary || {};
+    // 局部 esc（本文件惯例：每个渲染块自带局部实现，避免跨 IIFE 作用域引用——
+    // 2026-09-13 jsdom 实测：缺此定义导致 "esc is not defined" 中断整个脚本，
+    // 其后所有块（复习日分块/能量页/本块）均不再渲染）。
+    var esc = function (s) {
+      return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    };
+    var tip = (k.today_note || "过程 = 今日打卡；结果 = 错题复现")
+              + (k.available === false ? "（review_feedback 表数据不可用）" : "");
+    block.innerHTML =
+      '<h3 style="margin:0 0 8px;font-size:17px">反馈层闭环</h3>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:10px">' +
+        '<div style="text-align:center;padding:8px;border:1px solid var(--border);border-radius:6px">' +
+          '<div style="font-size:11px;color:var(--text-secondary)">过程 · 今日打卡</div>' +
+          '<div style="font-size:24px;font-weight:500">' + (k.today_checkins != null ? k.today_checkins : "—") + '</div>' +
+          '<div style="font-size:11px;color:var(--text-secondary)">次</div></div>' +
+        '<div style="text-align:center;padding:8px;border:1px solid var(--border);border-radius:6px">' +
+          '<div style="font-size:11px;color:var(--text-secondary)">结果 · 7日复现</div>' +
+          '<div style="font-size:24px;font-weight:500">' + (k.recurred_7d != null ? k.recurred_7d : "—") + '</div>' +
+          '<div style="font-size:11px;color:var(--text-secondary)">个 KP</div></div>' +
+        '<div style="text-align:center;padding:8px;border:1px solid var(--border);border-radius:6px">' +
+          '<div style="font-size:11px;color:var(--text-secondary)">待办干预</div>' +
+          '<div style="font-size:24px;font-weight:500">' + (iv.pending_interventions != null ? iv.pending_interventions : "—") + '</div>' +
+          '<div style="font-size:11px;color:var(--text-secondary)">个</div></div>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:8px">' + tip + '</div>';
+    if (iv.available !== false && iv.pending_interventions > 0) {
+      // 数据驱动（2026-09-13 方案 B）：trigger 分组来自后端 iv.by_trigger，不再硬编码。
+      var TRIGGER_LABEL = {
+        FIRST_WRONG: "首次答错", OVERDUE: "逾期", LOW_CONFIDENCE: "低信心",
+        STAGNATION: "停滞", PARETO_ROOT: "Pareto 根因", FEEDBACK_LOOP: "反馈闭环"
+      };
+      var byTrigger = iv.by_trigger || {};
+      var triggerTxt = Object.keys(byTrigger).filter(function (t) {
+        return Number(byTrigger[t]) > 0;
+      }).map(function (t) {
+        return esc(TRIGGER_LABEL[t] || t) + " " + byTrigger[t];
+      }).join(" · ");
+      if (triggerTxt) {
+        block.innerHTML +=
+          '<div style="border-top:1px dashed var(--border);padding-top:8px">' +
+            '<div style="font-weight:500;margin-bottom:4px;font-size:13px">干预动作待办（按类型分组）</div>' +
+            '<div style="font-size:12px;color:var(--text-secondary)">' + triggerTxt + '</div>' +
+          '</div>';
+      }
+      // 反馈闭环待办（trigger=FEEDBACK_LOOP，最多 3 条）：执行后一键回标 DONE
+      var loopItems = (iv.recent || []).filter(function (it) {
+        return it && it.trigger === "FEEDBACK_LOOP";
+      }).slice(0, 3);
+      if (loopItems.length) {
+        var fblRows = loopItems.map(function (it) {
+          var tag = it.needs_review
+            ? '<span style="display:inline-block;margin-left:6px;padding:0 6px;'
+              + 'border:1px solid #C9A227;border-radius:3px;color:#8A6D1F;font-size:10px">待复核</span>'
+            : '';
+          // 2026-09-13 King #4：问题编号改为超链接（→ 今日复习对应照片卡片）。
+          var midLink = it.mistake_id != null
+            ? '<a href="javascript:void(0)" class="fd-mid-link" data-mid="' + esc(it.mistake_id) + '" '
+              + 'title="跳转到 #' + esc(it.mistake_id) + ' 的照片卡片" '
+              + 'style="color:var(--gold);text-decoration:underline;font-weight:500">#'
+              + esc(it.mistake_id) + '</a>'
+            : '<span style="color:var(--text-secondary)">#?</span>';
+          return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;'
+            + 'border-bottom:1px solid var(--border-tertiary)">'
+            + '<div style="flex:1;font-size:12px">' + midLink
+            + ' · ' + esc(it.snippet || "（无摘要）") + tag + '</div>'
+            + '<button type="button" class="fbl-done" data-id="' + esc(it.id) + '" '
+            + 'style="flex:0 0 auto;padding:2px 10px;font-size:11px;border:1px solid var(--gold);'
+            + 'border-radius:4px;background:#fff;cursor:pointer">标记完成</button></div>';
+        }).join("");
+        block.innerHTML +=
+          '<div style="border-top:1px dashed var(--border);padding-top:8px;margin-top:8px">' +
+            '<div style="font-weight:500;margin-bottom:4px;font-size:13px">反馈闭环待办（执行后回标）</div>' +
+            fblRows +
+          '</div>';
+      }
+      // 事件绑定必须在所有 innerHTML 拼接完成后（innerHTML 重解析会清掉旧监听）
+      var fblBtns = block.querySelectorAll(".fbl-done");
+      for (var bi = 0; bi < fblBtns.length; bi++) {
+        fblBtns[bi].addEventListener("click", function () {
+          var btn = this;
+          var iid = parseInt(btn.getAttribute("data-id"), 10);
+          btn.disabled = true;
+          fetch("http://127.0.0.1:8765/api/intervention/done", {  // audit-ok: 本地服务地址，非外部依赖
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: iid })
+          }).then(function (r) {
+            return r.json().then(function (j) { return { ok: r.ok, j: j }; });
+          }).then(function (res) {
+            if (res.ok) {
+              btn.textContent = "[已标记完成]";
+            } else {
+              btn.disabled = false;
+              btn.textContent = "标记失败";
+            }
+          }).catch(function () {
+            btn.disabled = false;
+            btn.textContent = "标记失败";
+          });
+        });
+      }
+    }
+    cc.parentNode.insertBefore(block, cc.nextSibling);
+  })();
+  // VIS-12 入口卡（驾驶舱顶部常驻）
+  var entry = document.createElement("div");
+  entry.className = "card num-click";
+  entry.style.cssText = "margin-bottom:14px;border-color:var(--gold);border-width:3px";
+  var n = (D.review_today || []).length;
+  var entryTip = n > 0 ? "点击进入复习，逐题查看原始截图" : "今天的错题都已复习或处理";
+  entry.innerHTML = '<h3>今日待复习错题</h3>' +
+    // 走法 B（2026-09-12）：加 id 挂点，供 __fdRealtime 用实时值覆盖静态计数
+    '<div class="v" id="fd-review-count">' + n + "</div>" +
+    '<div class="t">' + entryTip + "</div>";
+  entry.addEventListener("click", function () {
+    document.querySelector('nav.tabs button[data-panel="review"]').click();
+  });
+  cc.parentNode.insertBefore(entry, cc);
+
+  // ── 阶段 1.1：错因诊断卡（PPT P12 4 类 · OpenMAIC 借鉴 B）──
+  if (D.diagnosis_cards && D.diagnosis_cards.length) {
+    var dx = document.createElement("div");
+    dx.id = "diagnosis-block";
+    dx.style.cssText = "margin-bottom:14px;padding:14px;border:1px solid var(--gold);border-radius:8px;background:#FFFBF2";
+    var _dmIds2 = D.diagnosis_mistake_ids || {};
+    var dCards = D.diagnosis_cards.map(function (c) {
+      var ids = _dmIds2[c.key] || [];
+      var link = ids.length
+        ? '<a href="javascript:void(0)" class="fd-mid-link" data-mid="' + ids[0] + '" '
+          + 'title="跳转到该错因的照片卡片（今日复习页）" '
+          + 'style="font-size:11px;color:var(--gold);text-decoration:underline">看错题卡（' + ids.length + '）</a>'
+        : '';
+      return '<div style="text-align:center;padding:8px;border:1px solid var(--border);border-radius:6px">' +
+        '<div style="font-size:20px">' + c.icon + '</div>' +
+        '<div style="font-size:18px;font-weight:500">' + c.count + '</div>' +
+        '<div style="font-size:11px;color:var(--text-secondary)">已驯服 ' + c.tamed + '</div>' +
+        '<div style="font-size:11px;font-weight:500;margin-top:4px">' + c.name + '</div>' +
+        '<div style="font-size:10px;color:var(--text-secondary);margin-top:2px">' + (c.progress * 100).toFixed(0) + '%</div>' +
+        (link ? '<div style="margin-top:2px">' + link + '</div>' : '') + '</div>';
+    }).join("");
+    var dRows = D.diagnosis_cards.map(function (c) {
+      var ids = _dmIds2[c.key] || [];
+      var link = ids.length
+        ? '<a href="javascript:void(0)" class="fd-mid-link" data-mid="' + ids[0] + '" '
+          + 'style="font-size:11px;color:var(--gold);text-decoration:underline;margin-left:6px">看错题卡（' + ids.length + '）</a>'
+        : '';
+      return '<div style="padding:6px 0;border-bottom:1px solid var(--border-tertiary);font-size:12px">' +
+        '<span style="font-weight:500;color:var(--text-primary)">' + c.icon + ' ' + c.name +
+        ' <span style="color:var(--text-secondary);font-weight:400">(' + c.count + ' 张)</span></span>' +
+        '<span style="margin-left:8px;color:var(--text-secondary)">' + c.action + '</span>' + link + '</div>';
+    }).join("");
+    dx.innerHTML =
+      '<h3 style="margin:0 0 8px;font-size:17px">错因诊断（4 类错因 → 干预动作）</h3>' +
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">' + dCards + '</div>' +
+      '<div style="border-top:1px dashed var(--border);padding-top:8px">' + dRows + '</div>' +
+      '<div style="font-size:10px;color:var(--text-tertiary);margin-top:6px">CONCEPT 概念 / CALC 计算 / MISREAD 审题 / NORM 规范</div>';
+    cc.parentNode.insertBefore(dx, cc.nextSibling);
+  }
+
+  // 跟进事项（重拍/复核·清单式：与"今日复习"一致风格，含缩略图+点击放大）
+  // VIS-13 规则：count===0 时整块不渲染清单与缩略图；rephoto 改显示"已确认"状态条
+  if (D.followups) {
+    var fu = D.followups;
+
+    // ── 待人工确认队列（真实数据：fdl_serve 分析写入 review_queue.json）──
+    // 每项直接展示原图 + 无法识别的具体问题 + 最可能原因 + 查看详情链接
+    (function () {
+      var items = D.needs_review_items || [];
+      if (!items.length) { return; }
+      var blk = document.createElement("div");
+      blk.id = "needs-review-block";
+      blk.style.cssText = "margin-bottom:14px;padding:14px;border:1.5px solid #E7CFA0;border-radius:8px;background:#FFFBF2";
+      blk.innerHTML = '<h3 style="margin:0 0 4px;font-size:14px">待人工确认（'
+        + items.length + ' 张）— 无法自动识别，需人工判断</h3>'
+        + '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px">'
+        + '来源：FDL 自动分析。以下每张附原图、识别失败的具体问题与最可能原因；'
+        + '确认后可在「错题本」中补录或忽略。</div>';
+      items.forEach(function (q, i) {
+        var card = document.createElement("div");
+        card.style.cssText = "border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;background:#fff";
+        // King 2026-09-10："如果无法精确截取一题，还是显示整页"——
+        // 段级卡片主图一律**整页**（方向矫正版 PNG 无损，包含全部上下文），
+        // 段级 segment_crop 仅作为可选补充（更窄的子图裁剪）。
+        var yHint = q.y_hint ? '<div style="color:var(--gold);font-size:11px;margin-top:4px">'
+          + '<span style="display:inline-block;width:8px;height:8px;background:var(--gold);'
+          + 'border-radius:50%;margin-right:4px;vertical-align:middle"></span>'
+          + '建议关注区域：' + q.y_hint + '（原图全 100% 高度，标注在图中的纵向比例位置）</div>' : '';
+        var hasSegment = q.segment_crop && q.segment_crop !== q.thumb;
+        card.innerHTML =
+          '<div style="display:flex;gap:12px;flex-wrap:wrap">'
+          + '<img src="' + q.thumb + '" data-kp="needs-review-' + i + '" class="review-img" '
+          +   'style="width:360px;max-width:55%;border:2px solid var(--ink);border-radius:6px;cursor:zoom-in" '
+          +   'alt="整页原图 ' + (q.src || i) + '（点击放大）">'
+          + '<div style="flex:1;min-width:240px;font-size:12px;line-height:1.7">'
+          +   '<div><b>文件：</b>' + (q.src || "?") + '</div>'
+          +   (q.source_label ? '<div><b>出处：</b>' + q.source_label + '（出处页已记录，不计为错题）</div>' : '')
+          +   (yHint || '<div style="color:var(--text-secondary);font-size:11px">原图整页显示，可在 lightbox 中放大细看</div>')
+          +   (hasSegment
+              ? '<div style="margin-top:4px">已尝试分段裁剪（<a href="javascript:void(0)" onclick="(function(img){var lb=document.getElementById(\'lightbox-mask\');var im=document.getElementById(\'lightbox-img\');im.src=img;lb.classList.add(\'open\');})(\''
+                + q.segment_crop + '\')" style="color:var(--gold);text-decoration:underline">查看段级裁剪图</a>）</div>'
+              : '')
+          +   '<div style="color:#A32D2D;margin-top:4px"><b>无法识别的问题：</b>' + (q.reason || "—") + '</div>'
+          +   '<div style="margin-top:4px"><b>最可能原因：</b>' + (q.likely_cause || "—") + '</div>'
+          +   '<div style="color:var(--text-secondary);margin-top:4px">引擎 ' + (q.engine || "—")
+          +     ' · 识别行数 ' + (q.lines != null ? q.lines : "—")
+          +     ' · 置信度 ' + (q.confidence != null ? (q.confidence * 100).toFixed(0) + "%" : "—")
+          +     (q.red_marks ? ' · <b style="color:#A32D2D">红笔批注 ×' + q.red_marks
+                + '（' + ({cross:"打叉", circle:"圈画", mixed:"混合"}[q.red_kind] || q.red_kind) + '）</b>' : '')
+          +   '</div>'
+          +   (q.text_head ? '<div style="color:var(--text-secondary);font-size:11px;margin-top:4px">识别摘要：' + (q.text_head.slice(0, 100)) + '…</div>' : '')
+          +   '<div style="color:var(--text-secondary);font-size:11px;margin-top:4px">归档：' + (q.archived_to || "—") + '</div>'
+          +   '<div style="margin-top:8px;display:flex;gap:14px;flex-wrap:wrap;align-items:center">'
+          +     '<button type="button" data-confirm-edit="' + (q.audio_name || q.src || ('i' + i)) + '" '
+          +       'data-qno="' + (q.src || '').replace(/"/g, '&quot;') + '" '
+          +       'data-stem="' + (q.text_head || '').slice(0, 200).replace(/"/g, '&quot;') + '" '
+          +       'data-source-label="' + (q.source_label || '').replace(/"/g, '&quot;') + '" '
+          +       'data-original="' + (q.archived_to || '').replace(/"/g, '&quot;') + '" '
+          +       'style="padding:6px 14px;border:2px solid var(--gold);background:var(--gold);'
+          +       'color:#fff;border-radius:6px;cursor:pointer;font-family:var(--hand);font-size:13px">'
+          +       '录入/编辑错题</button>'
+          +     '<a href="javascript:void(0)" onclick="window.__gotoReview(\'needs-review-block\')" '
+          +       'style="color:var(--text-secondary);text-decoration:underline;font-size:12px">'
+          +       '查看整页原图（跳转复习页）</a>'
+          +   '</div>'
+          + '</div></div>';
+        blk.appendChild(card);
+      });
+      cc.parentNode.insertBefore(blk, entry.nextSibling);
+
+      // ── 录入/编辑错题对话框（2026-09-10 King 需求）──
+      // 流程：开 → 初始化字段（预填识别结果）→ 二次确认 → 提交 →
+      //   POST /api/mistakes/confirm → 成功后 ① 关闭 ② 标记 review_queue
+      //   对应条目 status='confirmed' + ③ 按钮置灰「已确认」。
+      var $cf = function (id) { return document.getElementById(id); };
+      var cfState = { submitting: false, pending: null };
+
+      function confirmOpen(btn) {
+        var ds = btn.dataset;
+        cfState.pending = {
+          qno: ds.qno || "",
+          stem: ds.stem || "",
+          source_label: ds.sourceLabel || "",
+          original: ds.original || "",
+        };
+        $cf("confirm-title").textContent = "录入错题 · " + (ds.qno || "未命名");
+        $cf("confirm-meta").innerHTML = '<b>出处：</b>' + (ds.sourceLabel || "—")
+          + '　·　<b>原图：</b>' + (ds.original ? ds.original.split("/").slice(-1)[0] : "—")
+          + '　<a href="javascript:void(0)" onclick="window.__confirmViewImage()" '
+          + 'style="color:var(--gold);text-decoration:underline;margin-left:6px">查看原图</a>';
+        // 预填字段（用户可手改）
+        $cf("cf-qno").value = ds.qno || "";
+        $cf("cf-stem").value = ds.stem || "";
+        $cf("cf-optA").value = ""; $cf("cf-optB").value = "";
+        $cf("cf-optC").value = ""; $cf("cf-optD").value = "";
+        $cf("cf-answer").value = "";
+        $cf("cf-correct").value = "";
+        $cf("cf-reason").value = "OTHER";
+        $cf("cf-explain").value = "";
+        $cf("confirm-status").textContent = "";
+        $cf("confirm-status").className = "ct-status";
+        $cf("confirm-panel").classList.add("open");
+        $cf("confirm-mask").classList.add("open");
+        $cf("confirm-mask").setAttribute("aria-hidden", "false");
+        $cf("confirm-panel").scrollTop = 0;
+        setTimeout(function () { $cf("cf-qno").focus(); }, 80);
+      }
+      function confirmClose() {
+        $cf("confirm-panel").classList.remove("open");
+        $cf("confirm-mask").classList.remove("open");
+        $cf("confirm-mask").setAttribute("aria-hidden", "true");
+        cfState.pending = null;
+      }
+      window.__confirmViewImage = function () {
+        if (!cfState.pending || !cfState.pending.original) { return; }
+        var lb = $cf("lightbox-mask");
+        var im = $cf("lightbox-img");
+        if (!im || !lb) { return; }
+        fetch("http://127.0.0.1:8765/api/image?path=" + encodeURIComponent(cfState.pending.original))  // audit-ok: 本地服务地址，非外部依赖
+          .then(function (r) { return r.blob(); })
+          .then(function (b) { im.src = URL.createObjectURL(b); lb.classList.add("open"); })
+          .catch(function () {
+            $cf("confirm-status").textContent = "查看原图失败（确认服务是否在 8765 端口）";
+            $cf("confirm-status").className = "ct-status err";
+          });
+      };
+
+      blk.addEventListener("click", function (e) {
+        var b = e.target.closest && e.target.closest("[data-confirm-edit]");
+        if (b) { confirmOpen(b); }
+      });
+      $cf("confirm-close").addEventListener("click", confirmClose);
+      $cf("confirm-mask").addEventListener("click", confirmClose);
+      $cf("confirm-cancel").addEventListener("click", confirmClose);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && $cf("confirm-panel").classList.contains("open")) {
+          confirmClose();
+        }
+      });
+
+      $cf("confirm-form").addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        if (cfState.submitting) { return; }
+        var data = {
+          qno: $cf("cf-qno").value.trim(),
+          stem: $cf("cf-stem").value.trim(),
+          optA: $cf("cf-optA").value.trim(),
+          optB: $cf("cf-optB").value.trim(),
+          optC: $cf("cf-optC").value.trim(),
+          optD: $cf("cf-optD").value.trim(),
+          answer: $cf("cf-answer").value.trim(),
+          correct: $cf("cf-correct").value.trim(),
+          reason: $cf("cf-reason").value,
+          explain: $cf("cf-explain").value.trim(),
+          source_label: cfState.pending ? cfState.pending.source_label : "",
+          original: cfState.pending ? cfState.pending.original : "",
+          ts: Date.now() / 1000,
+        };
+        if (!data.qno) {
+          $cf("confirm-status").textContent = "题号必填";
+          $cf("confirm-status").className = "ct-status err";
+          $cf("cf-qno").focus();
+          return;
+        }
+        if (!data.stem && !data.optA && !data.optB && !data.optC && !data.optD) {
+          $cf("confirm-status").textContent = "题干与选项至少填一项";
+          $cf("confirm-status").className = "ct-status err";
+          return;
+        }
+        var ok = window.confirm("确认把这道题录入错题本？\n\n题号：" + data.qno
+          + "\n题干：" + (data.stem || "（未填）").slice(0, 60)
+          + "\n错因：" + (data.reason || "OTHER"));
+        if (!ok) { return; }
+        cfState.submitting = true;
+        $cf("confirm-submit").disabled = true;
+        $cf("confirm-submit").textContent = "提交中…";
+        $cf("confirm-status").textContent = "正在写入错题本…";
+        $cf("confirm-status").className = "ct-status";
+        fetch("http://127.0.0.1:8765/api/mistakes/confirm", {  // audit-ok: 本地服务地址，非外部依赖
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        })
+        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok) { throw new Error(res.j.error || "提交失败"); }
+          $cf("confirm-status").innerHTML =
+            "<b style='color:#2f9e6e'>录入成功</b>　错题 ID: #" + res.j.mistake_id
+            + (res.j.queue_index != null
+              ? '　·　review_queue 条目已标记为已确认（idx=' + res.j.queue_index + '）'
+              : '');
+          $cf("confirm-status").className = "ct-status ok";
+          try {
+            var card = document.querySelector(
+              '[data-confirm-edit][data-qno="' + (cfState.pending && cfState.pending.qno || "")
+                .replace(/"/g, '\\"') + '"]');
+            if (card) {
+              card.disabled = true;
+              card.textContent = "已确认（已入错题本）";
+              card.style.background = "var(--border)";
+              card.style.borderColor = "var(--border)";
+              card.style.color = "var(--text-secondary)";
+            }
+          } catch (e) {}
+          setTimeout(function () { confirmClose(); }, 2500);
+        })
+        .catch(function (err) {
+          $cf("confirm-status").textContent = "提交失败：" + (err.message || err);
+          $cf("confirm-status").className = "ct-status err";
+        })
+        .finally(function () {
+          cfState.submitting = false;
+          $cf("confirm-submit").disabled = false;
+          $cf("confirm-submit").textContent = "提交并入错题本";
+        });
+      });
+    })();
+
+    var fuItems = [
+      { key: "rephoto", label: "待重拍照片", tip: "重拍要点：正向拍摄（避免镜像/倒置）、光线均匀、整页入镜", det: fu.rephoto },
+      { key: "verify", label: "待复核题项", tip: "复核要点：翻原书核对原题数字与图意，确认后更新错题卡", det: fu.verify },
+    ];
+    fuItems.forEach(function (it) {
+      // VIS-13：count=0 时跳过清单+缩略图（无论 items 是否非空）
+      if (it.det.count === 0) {
+        // 状态条卡（审计痕迹：曾有过，现已确认跳过）
+        var badge = document.createElement("div");
+        badge.className = "card ok";
+        badge.style.cssText = "margin-bottom:14px";
+        var doneMsg = it.key === "rephoto"
+          ? "5 张待重拍照片已确认无需重拍"
+          : "3 张待复核题项已全部入错题本并标注";
+        var doneTip = it.key === "rephoto"
+          ? "King 2026-09-06 22:14 人工核验可辨，已跳过重拍流程"
+          : "King 2026-09-06 22:44 确认清空（原含 P36 #11 / P64 #10/#12 与重复项；错题本接管）";
+        badge.innerHTML = "<h3>" + doneMsg + "</h3>" +
+          "<div class=\"t\">" + doneTip + "</div>" +
+          '<div style="margin-top:6px"><a href="javascript:void(0)" '
+          + 'onclick="window.__gotoReview(null)" '
+          + 'style="color:var(--gold);text-decoration:underline;font-size:12px">查看详情（跳转复习页）</a></div>';
+        cc.parentNode.insertBefore(badge, entry.nextSibling);
+        return;  // 跳过标题卡+清单+缩略图渲染
+      }
+      // 标题卡（与小卡等宽，顶部对齐）
+      var h = document.createElement("div");
+      h.className = "card";
+      h.style.cssText = "margin-bottom:14px";
+      h.innerHTML = '<h3>' + it.label + "（2026-09-06 批次备注）</h3>" +
+        '<div class="v">' + it.det.count + "</div>" +
+        '<div class="t">点击下列任意图片放大查看原图 · ' + it.tip + "</div>";
+      cc.parentNode.insertBefore(h, entry.nextSibling);
+      // 清单项容器（与"今日复习" review-list 同 .cards 风格）
+      var list = document.createElement("div");
+      list.className = "cards";
+      list.style.cssText = "margin-bottom:16px";
+      it.det.items.forEach(function (it2, idx) {
+        // followups 缩略图已由 render_html 内联为 data: URI，离线无外部请求。
+        // （保留旧拼接写法供 test_followup_panel_dom 锁定：var thumb = "images/followups/" + it2.thumb;）
+        var thumb = it2.thumb;
+        var item = document.createElement("div");
+        item.className = "card";
+        item.style.cssText = "padding:10px";
+        item.innerHTML = '<h3 style="font-size:15px">' + it2.label + "</h3>" +
+          '<img class="review-img" src="' + thumb + '" alt="' + it.label + ' #' + (idx + 1) + ': ' + it2.label + '"' +
+          ' style="width:100%;border:2px solid var(--ink);cursor:zoom-in;border-radius:var(--sketch-radius);margin-top:6px">' +
+          '<div class="t" style="margin-top:6px">点击图片放大查看原图</div>';
+        list.appendChild(item);
+      });
+      h.parentNode.insertBefore(list, h.nextSibling);
+    });
+  }
+  var rl = document.getElementById("redlines");
+  if (D.redlines) {
+    rl.innerHTML = D.redlines.map(function (r) {
+      // 2026-09-13 King #7：判定式 + 引用关系小字（把公式落在卡片上，不再只藏在代码里）
+      var f = r.formula
+        ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:3px">' + r.formula + '</div>'
+        : "";
+      return '<div class="redline ' + r.status + '"><h4>' + r.name + "：" + r.state +
+             "</h4><p>" + r.action + "</p>" + f + "</div>";
+    }).join("");
+  }
+  // 学习星图（Step 3 · 2026-09-12）：三维筛选 学科 → 领域 → 学期 + 关联边 + Obsidian 链接。
+  // 布局坐标由 fdl_core/notes/starmap.py 预计算（确定性、可测试），前端只做筛选与绘制。
+  var smSvg = document.getElementById("starmap-svg");
+  var SM = D.starmap;
+  var smSel = { subject: "ALL", domain: "ALL", term: "ALL" };
+  // 时间回溯（2026-09-13 King #13：以周为单位）。
+  // 索引 = 回溯周数；末位（NOW_IDX）为「现在」。滑块 max=4 → 4/3/2/1 周前 + 现在。
+  var LOOKBACKS = ["4 周前", "3 周前", "2 周前", "1 周前", "现在"];
+  var NOW_IDX = LOOKBACKS.length - 1;
+  var currentLookback = NOW_IDX;
+  function smEsc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function smTermKey(t) {
+    if (t === "小A") { return 99; }
+    var m = /^G(\d)([AB])$/.exec(t);
+    return m ? (+m[1]) * 2 + (m[2] === "A" ? 0 : 1) : 50;
+  }
+  function smVisibleNodes() {
+    return SM.nodes.filter(function (n) {
+      return (smSel.subject === "ALL" || n.subject === smSel.subject) &&
+             (smSel.domain === "ALL" || n.domain === smSel.domain) &&
+             (smSel.term === "ALL" || n.term === smSel.term);
+    });
+  }
+  function smBtn(label, active, onClick) {
+    var b = document.createElement("button");
+    b.className = "sf-btn" + (active ? " on" : "");
+    b.textContent = label;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+  function smRenderFilters() {
+    var forSubject = SM.nodes.filter(function (n) {
+      return smSel.subject === "ALL" || n.subject === smSel.subject;
+    });
+    var domains = [];
+    forSubject.forEach(function (n) {
+      if (domains.indexOf(n.domain) < 0) { domains.push(n.domain); }
+    });
+    domains.sort();
+    var forDomain = forSubject.filter(function (n) {
+      return smSel.domain === "ALL" || n.domain === smSel.domain;
+    });
+    var terms = [];
+    forDomain.forEach(function (n) {
+      if (terms.indexOf(n.term) < 0) { terms.push(n.term); }
+    });
+    terms.sort(function (a, b) { return smTermKey(a) - smTermKey(b); });
+
+    var sb = document.getElementById("sm-subjects");
+    sb.innerHTML = "";
+    sb.appendChild(smBtn("全部（" + SM.stats.nodes + "）", smSel.subject === "ALL", function () {
+      smSel.subject = "ALL"; smSel.domain = "ALL"; smSel.term = "ALL";
+      smRenderFilters(); drawStarmap();
+    }));
+    SM.subjects.filter(function (s) { return s.count > 0; }).forEach(function (s) {
+      sb.appendChild(smBtn(s.name + "（" + s.count + "）", smSel.subject === s.code, function () {
+        smSel.subject = smSel.subject === s.code ? "ALL" : s.code;
+        smSel.domain = "ALL"; smSel.term = "ALL";
+        smRenderFilters(); drawStarmap();
+      }));
+    });
+
+    var db = document.getElementById("sm-domains");
+    db.innerHTML = "";
+    db.appendChild(smBtn("全部", smSel.domain === "ALL", function () {
+      smSel.domain = "ALL"; smSel.term = "ALL";
+      smRenderFilters(); drawStarmap();
+    }));
+    domains.forEach(function (d) {
+      var cnt = forSubject.filter(function (n) { return n.domain === d; }).length;
+      db.appendChild(smBtn(d + "（" + cnt + "）", smSel.domain === d, function () {
+        smSel.domain = smSel.domain === d ? "ALL" : d;
+        smSel.term = "ALL";
+        smRenderFilters(); drawStarmap();
+      }));
+    });
+
+    var tb = document.getElementById("sm-terms");
+    tb.innerHTML = "";
+    tb.appendChild(smBtn("全部", smSel.term === "ALL", function () {
+      smSel.term = "ALL"; smRenderFilters(); drawStarmap();
+    }));
+    terms.forEach(function (t) {
+      var cnt = forDomain.filter(function (n) { return n.term === t; }).length;
+      tb.appendChild(smBtn(t + "（" + cnt + "）", smSel.term === t, function () {
+        smSel.term = smSel.term === t ? "ALL" : t;
+        smRenderFilters(); drawStarmap();
+      }));
+    });
+  }
+  function drawStarmap() {
+    if (!SM || !smSvg) { return; }
+    var vis = smVisibleNodes();
+    var visByCode = {};
+    vis.forEach(function (n) { visByCode[n.code] = n; });
+    var posByCode = {};
+    SM.nodes.forEach(function (n) { posByCode[n.code] = n; });
+    var h = "";
+
+    SM.clusters.forEach(function (c) {
+      var cnt = 0;
+      vis.forEach(function (n) {
+        if (n.x >= c.x && n.x <= c.x + c.w && n.y >= c.y && n.y <= c.y + c.h) { cnt += 1; }
+      });
+      h += '<rect class="sm-cluster" x="' + c.x + '" y="' + c.y + '" width="' + c.w +
+           '" height="' + c.h + '" rx="12"' + (cnt ? "" : ' opacity="0.35"') + "/>";
+      h += '<text class="sm-clabel" x="' + (c.x + 14) + '" y="' + (c.y + 18) + '">' +
+           smEsc(c.label) + "（" + c.count + "）</text>";
+    });
+
+    var visEdges = SM.edges.filter(function (e) {
+      return visByCode[e.from] && visByCode[e.to];
+    });
+    visEdges.forEach(function (e) {
+      var a = posByCode[e.from];
+      var b = posByCode[e.to];
+      var cls = e.cross ? "sm-e sm-e-cross"
+                        : (e.source === "LLM_AUTO" ? "sm-e sm-e-auto" : "sm-e sm-e-suggest");
+      var mx = ((a.x + b.x) / 2).toFixed(1);
+      var my = ((a.y + b.y) / 2 - 18).toFixed(1);
+      var tip = a.name + " ↔ " + b.name + " ｜ " + e.type + " · " +
+                (e.source === "LLM_AUTO" ? "自动" : "待复核") +
+                (e.confidence === null ? "" : " · " + e.confidence) +
+                (e.note ? " ｜ " + e.note : "");
+      h += '<path class="' + cls + '" data-ef="' + e.from + '" data-et="' + e.to +
+           '" d="M ' + a.x + " " + a.y + " Q " + mx + " " + my + " " + b.x + " " + b.y + '">' +
+           "<title>" + smEsc(tip) + "</title></path>";
+    });
+
+    vis.forEach(function (n) {
+      var color = "#4A5F6B";
+      if (currentLookback === NOW_IDX && n.m_adj !== null) {
+        color = n.m_adj >= 0.7 ? "#F5B841" : (n.m_adj >= 0.4 ? "#5B8DBE" : "#7A6F5D");
+      }
+      var deg = 0;
+      SM.edges.forEach(function (e) {
+        if (e.from === n.code || e.to === n.code) { deg += 1; }
+      });
+      var r = (currentLookback === NOW_IDX && n.lit) ? 6.5 : (deg ? 5 : 3.6);
+      var links = [];
+      if (n.obsidian) { links.push({ label: "在 Obsidian 打开", href: n.obsidian }); }
+      if (n.card) { links.push({ label: "复制卡片路径", copy: n.card }); }
+      var det = {
+        kind: "知识点详情",
+        source: "knowledge_point" + (n.card ? "（知识书卡片：" + n.card + "）" : "（未找到卡片）"),
+        rows: [
+          { "项目": "编号", "值": n.code },
+          { "项目": "学科", "值": n.subject_name },
+          { "项目": "领域", "值": n.domain },
+          { "项目": "学期桶", "值": n.term },
+          { "项目": "关联边", "值": deg + " 条" },
+          { "项目": "掌握度", "值": n.m_adj === null ? "未点亮" : n.m_adj }
+        ],
+        links: links,
+        note: "星色 = 掌握度 M_adj（深灰 → 蓝 → 亮金）；" +
+              "关联边来自 kp_relation（跨学科以金色高亮）。" +
+              (n.obsidian ? "「在 Obsidian 打开」依赖 vault「" + SM.vault_name +
+                            "」（已注册）；若首次点击无响应，重启一次 Obsidian 即可生效。" : "")
+      };
+      var label = n.name.length > 6 ? n.name.slice(0, 6) + "…" : n.name;
+      h += '<g class="sm-node" data-code="' + n.code + '" data-name="' + smEsc(n.name) +
+           '" data-detail="' + encodeURIComponent(JSON.stringify(det)) + '">' +
+           '<circle cx="' + n.x + '" cy="' + n.y + '" r="' + r + '" fill="' + color + '"' +
+           (deg ? "" : ' stroke="#7A6F5D" stroke-width="1.4"') + ">" +
+           "<title>" + smEsc(n.name) + "（" + smEsc(n.code) + "）｜ 点击看详情</title></circle>" +
+           '<text class="sm-nlabel" x="' + n.x + '" y="' + (n.y + 20) + '">' +
+           smEsc(label) + "</text></g>";
+    });
+
+    smSvg.innerHTML = h;
+    var stat = document.getElementById("sm-stat");
+    if (stat) {
+      stat.textContent = "当前显示 " + vis.length + " 个知识点 · " + visEdges.length + " 条关联";
+    }
+    var paths = smSvg.querySelectorAll(".sm-e");
+    smSvg.querySelectorAll(".sm-node").forEach(function (g) {
+      g.addEventListener("mouseenter", function () {
+        var code = g.getAttribute("data-code");
+        paths.forEach(function (p) {
+          var hit = p.getAttribute("data-ef") === code || p.getAttribute("data-et") === code;
+          p.classList.toggle("hl", hit);
+          p.classList.toggle("sm-dim", !hit);
+        });
+        smSvg.querySelectorAll(".sm-node").forEach(function (o) {
+          o.classList.toggle("sm-dim", o !== g);
+        });
+      });
+      g.addEventListener("mouseleave", function () {
+        paths.forEach(function (p) { p.classList.remove("hl", "sm-dim"); });
+        smSvg.querySelectorAll(".sm-node").forEach(function (o) { o.classList.remove("sm-dim"); });
+      });
+    });
+  }
+  if (SM && smSvg) {
+    smSvg.setAttribute("viewBox", "0 0 " + SM.width + " " + SM.height);
+    var slider = document.getElementById("time-slider");
+    if (slider) {
+      slider.addEventListener("input", function () {
+        currentLookback = +slider.value;
+        document.getElementById("time-label").textContent = LOOKBACKS[currentLookback];
+        drawStarmap();
+      });
+    }
+    smRenderFilters();
+    drawStarmap();
+    // 2026-09-13 King #12：FDL logo 星星 → 星图学科入口。
+    // 点击任一颗星：切到「学习星图」tab + 选中对应学科（ALL=全部）+ 重绘。
+    // 暴露为全局函数（供 logo SVG 与未来其他入口复用）。
+    window.__fdOpenStarmap = function (subjectCode) {
+      var tab = document.querySelector('nav.tabs button[data-panel="starmap"]');
+      if (tab) { tab.click(); }
+      smSel.subject = subjectCode || "ALL";
+      smSel.domain = "ALL";
+      smSel.term = "ALL";
+      currentLookback = NOW_IDX;
+      if (slider) { slider.value = String(NOW_IDX); }
+      var tl = document.getElementById("time-label");
+      if (tl) { tl.textContent = LOOKBACKS[NOW_IDX]; }
+      smRenderFilters();
+      drawStarmap();
+      try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
+    };
+    document.querySelectorAll(".logo-star").forEach(function (st) {
+      st.addEventListener("click", function () {
+        window.__fdOpenStarmap(st.getAttribute("data-subject"));
+      });
+    });
+  }
+  // 体验趋势折线（V2）
+  var ts = document.getElementById("trend-svg");
+  if (D.trend && ts) {
+    var W = 900, H = 200, pad = 34;
+    var maxM = Math.max.apply(null, D.trend.map(function (t) { return t.minutes; }).concat([18]));
+    var pts = D.trend.map(function (t, i) {
+      var x = pad + i * ((W - pad * 2) / (D.trend.length - 1));
+      var y = H - pad - (t.minutes / maxM) * (H - pad * 2);
+      return { x: x, y: y, t: t };
+    });
+    var g = "";
+    g += '<line x1="' + pad + '" y1="' + (H - pad - (18 / maxM) * (H - pad * 2)) +
+         '" x2="' + (W - pad) + '" y2="' + (H - pad - (18 / maxM) * (H - pad * 2)) +
+         '" stroke="#C98A1B" stroke-dasharray="4 4" stroke-width="1"/>' +
+         '<text x="' + (W - pad) + '" y="' + (H - pad - (18 / maxM) * (H - pad * 2) - 4) +
+         '" text-anchor="end" font-size="11" fill="#C98A1B">18 min 上限</text>';
+    g += '<polyline fill="none" stroke="#0E7C7B" stroke-width="2.5" points="' +
+         pts.map(function (p) { return p.x.toFixed(1) + "," + p.y.toFixed(1); }).join(" ") + '"/>';
+    pts.forEach(function (p, idx) {
+      // 大透明可点击区（半径 18）+ 视觉小圆（半径 4）——便于悬停与点击
+      g += '<circle class="data-pt" data-idx="' + idx + '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
+           '" r="18" fill="transparent" style="cursor:pointer"/>';
+      g += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="4" fill="#0E7C7B" pointer-events="none"/>';
+      if (p.t.minutes > 0) {
+        g += '<text x="' + p.x.toFixed(1) + '" y="' + (H - 8) +
+             '" text-anchor="middle" font-size="10" fill="#6B7F87">' + p.t.date + "</text>";
+      }
+    });
+    ts.innerHTML = g;
+    // HTML tooltip（替代 SVG <title>：即时显示+统一样式）
+    var tip = document.getElementById("trend-tip");
+    var wrap = ts.parentElement;
+    function svgToClient(svg, x, y) {
+      var rect = svg.getBoundingClientRect();
+      var sx = rect.width / W, sy = rect.height / H;
+      return { cx: rect.left + x * sx, cy: rect.top + y * sy };
+    }
+    function showTip(idx) {
+      var p = pts[idx], t = p.t;
+      tip.textContent = t.date + " · " + t.minutes + " 分钟" + (t.minutes >= 18 ? "（达标）" : "");
+      var pos = svgToClient(ts, p.x, p.y);
+      tip.style.left = pos.cx + "px";
+      tip.style.top = pos.cy + "px";
+      tip.classList.add("show");
+      tip.style.opacity = "1";
+      tip.setAttribute("aria-hidden", "false");
+    }
+    function hideTip() {
+      tip.style.opacity = "0";
+      tip.setAttribute("aria-hidden", "true");
+    }
+    // 委托：监听整个 SVG，命中 .data-pt（避免每个圆独立绑 14 次）
+    ts.addEventListener("mousemove", function (e) {
+      var c = e.target.closest("circle.data-pt");
+      if (!c) { return; }
+      showTip(parseInt(c.getAttribute("data-idx"), 10));
+    });
+    ts.addEventListener("mouseleave", hideTip);
+    // 移动端 touch：tap 显示
+    ts.addEventListener("touchstart", function (e) {
+      var c = e.target.closest("circle.data-pt");
+      if (!c) { return; }
+      e.preventDefault();
+      showTip(parseInt(c.getAttribute("data-idx"), 10));
+    }, { passive: false });
+    document.addEventListener("touchstart", function (e) {
+      if (!e.target.closest("#trend-svg")) { hideTip(); }
+    });
+  }
+  // 足迹热力（V3 · VIS-02）：182 天网格，暖色橙金，缺席留白，露营日圆点
+  var tc = document.getElementById("trail-heat");
+  if (D.trail && tc) {
+    var cols = Math.ceil(D.trail.length / 7), cell = 14, gap = 3;
+    var g = '<rect x="0" y="0" width="' + (cols * (cell + gap) + 20) +
+            '" height="' + (7 * (cell + gap) + 40) + '" fill="#FFFDF5"/>';
+    // 2026-09-13 King #9「探险足迹横坐标未显示」修复：
+    //   横轴 = 周（每列一周，7 天自上而下）。在列首月份变化处标注「N月」，
+    //   并把月份文字放顶部留白（y=17），形成可读的横坐标。
+    var _prevMonth = null;
+    for (var ci = 0; ci < cols; ci++) {
+      var _first = D.trail[Math.min(ci * 7, D.trail.length - 1)];
+      if (!_first) { break; }
+      var _m = _first.date.slice(5, 7).replace(/^0/, "");
+      if (_m !== _prevMonth) {
+        g += '<text x="' + (10 + ci * (cell + gap)) + '" y="17" font-size="11" ' +
+             'fill="#7A6F5D">' + _m + "月</text>";
+        _prevMonth = _m;
+      }
+    }
+    D.trail.forEach(function (t, i) {
+      var col = Math.floor(i / 7), row = i % 7;
+      var x = 10 + col * (cell + gap), y = 26 + row * (cell + gap);
+      if (t.minutes <= 0) { return; }  // 缺席日留白
+      var fill = t.minutes > 18 ? "#D99A2B" : (t.minutes >= 10 ? "#E8B85A" : "#F2D9A0");
+      var trailDet = { source: "study_session 按日聚合（分钟/深度行为/追问）",
+        query: "SELECT SUM(effective_sec), SUM(deep_behavior_count), SUM(question_raised_count) WHERE session_date=?",
+        rows: [{ date: t.date, minutes: t.minutes, stars: t.stars, questions: t.questions }],
+        note: "暖色深浅 = 当日有效分钟数；露营日 = 自由探索（不计入强度）" };
+      g += '<rect data-detail="' + encodeURIComponent(JSON.stringify(trailDet)) +
+           '" x="' + x + '" y="' + y + '" width="' + cell + '" height="' + cell +
+           '" rx="4" fill="' + fill + '"><title>' + t.date + " · 这一天你点亮了 " +
+           t.stars + " 颗星，提出了 " + t.questions + " 个好问题（点击看详情）</title></rect>";
+      if (t.camp) {
+        g += '<circle cx="' + (x + cell / 2) + '" cy="' + (y + cell / 2) +
+             '" r="3" fill="#FFFDF5"/>';
+      }
+    });
+    tc.setAttribute("viewBox", "0 0 " + (cols * (cell + gap) + 20) + " " +
+                    (7 * (cell + gap) + 40));
+    tc.innerHTML = g;
+  }
+  // 图鉴（V3 · VIS-05）：驯服进度条 + 折叠列表（原生 details，默认收起）
+  var mc = document.getElementById("monster-cards");
+  if (D.monsters) {
+    mc.innerHTML = D.monsters.map(function (m) {
+      var pct = Math.round(m.progress * 100);
+      var bar = '<svg viewBox="0 0 120 14" style="width:120px;height:14px">' +
+        '<rect x="1" y="2" width="118" height="10" rx="5" fill="none" stroke="#2B2B2B" stroke-width="1.5"/>' +
+        '<rect x="3" y="4" width="' + Math.max(2, 114 * m.progress) +
+        '" height="6" rx="3" fill="#D99A2B"/></svg>';
+      var monDet = { source: "mistake_record 按 error_type 聚合（is_tamed 进度）",
+        query: "SELECT COUNT(*), SUM(is_tamed=1) FROM mistake_record WHERE error_type=?",
+        rows: [{ error_type: m.key, count: m.count, tamed: m.tamed }],
+        note: "驯服进度 = 已驯服 / 相遇次数（0% = 尚无错题达标，非显示错误）。"
+            + "驯服门槛（三条件同时满足）：① 走完 6 次阶梯复习（reappear_count≥6）"
+            + "② 最近 2 次自评均达「掌握」③ 当前无逾期计划。下方编号可跳转照片卡片。",
+        links: (m.mistake_ids || []).slice(0, 8).map(function (x) {
+          return { label: "#" + x, jump: x };
+        }) };
+      var badges = Object.keys(m.status_badge || {}).map(function (k) {
+        return k + " " + m.status_badge[k];
+      }).join(" · ");
+      // 2026-09-13 King #14：驯服历程内加「问题编号」（超链接 → 对应照片卡片）。
+      var _midLinks = (m.mistake_ids || []).slice(0, 8).map(function (x) {
+        return '<a href="javascript:void(0)" class="fd-mid-link" data-mid="' + x + '" '
+          + 'title="跳转到 #' + x + ' 的照片卡片" '
+          + 'style="color:var(--gold);text-decoration:underline">#' + x + '</a>';
+      }).join("、");
+      // 0% 的说明文案：不是显示错误，而是尚无错题达到驯服门槛
+      var _zeroNote = (m.count && !m.tamed)
+        ? "尚未驯服（门槛：6 次阶梯复习 + 最近两次自评≥掌握 + 无逾期）"
+        : ((m.last_reviewed ? "最近复习 " + m.last_reviewed + " · " : "")
+           + "又遇到老朋友了，驯服进度在涨（点击看详情）");
+      return '<div class="card num-click" data-detail="' +
+             encodeURIComponent(JSON.stringify(monDet)) + '"><h3>' +
+             m.name + (m.count ? " · 相遇 " + m.count + " 次" : "") +
+             "</h3>" + '<div class="v">' + (m.count ? pct + "%" : "—") + "</div>" + bar +
+             (badges ? '<div class="t" style="margin:2px 0">' + badges + "</div>" : "") +
+             '<div class="t">' + (m.count ? _zeroNote : "还未相遇") +
+             "</div>" +
+             (m.count ? '<details><summary style="cursor:pointer;font-size:13px">驯服历程</summary>' +
+               '<p style="font-size:13px">已驯服 ' + m.tamed + " / " + m.count +
+               "；驯服后它会进化成你的伙伴。</p>" +
+               (_midLinks ? '<p style="font-size:12px;margin-top:4px">问题编号：'
+                            + _midLinks + '</p>' : "") + '</details>' : "") +
+             "</div>";
+    }).join("");
+  }
+  // 今日复习面板（V4 · VIS-12）：截图列表逐题展示
+  var rl = document.getElementById("review-list");
+  // 图片放大预览（VIS-12 扩展）：单击复习页截图 → 浮层大图
+  // ! 必须放在 rl 定义之后（IIFE 顺序敏感，TDZ/未定义访问会中断后续所有渲染）
+  var lbMask = document.getElementById("lightbox-mask");
+  var lbImg = document.getElementById("lightbox-img");
+  var lbCap = document.getElementById("lightbox-caption");
+  function closeLightbox() { lbMask.classList.remove("open"); }
+  document.getElementById("lightbox-close").addEventListener("click", closeLightbox);
+  lbMask.addEventListener("click", function (e) {
+    if (e.target === lbMask) { closeLightbox(); }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && lbMask.classList.contains("open")) { closeLightbox(); }
+  });
+  // 全局点击委托（覆盖驾驶舱的跟进事项清单 + 复习页——任何 .review-img 都生效）
+  document.addEventListener("click", function (e) {
+    var img = e.target.closest("img.review-img");
+    if (!img) { return; }
+    lbImg.src = img.src;
+    lbCap.textContent = img.alt;
+    // 打开前清掉所有旋转/缩放 class（每次开是 0°/100%）
+    lbRotation = 0;
+    lbZoom = 100;
+    applyLbTransform();
+    lbMask.classList.add("open");
+  });
+  // 顺时针旋转 + 放大缩小（旋转和缩放独立切换；每次开 lightbox 重置为 0°/100%）
+  var lbRotation = 0, lbZoom = 100;
+  var ROT_SUFFIXES = ["", "rot-90", "rot-180", "rot-270"];
+  var ZOOM_SUFFIXES = { 50: "zoom-50", 75: "zoom-75", 100: "", 125: "zoom-125",
+                        150: "zoom-150", 200: "zoom-200" };
+  function applyLbTransform() {
+    // 先彻底清除所有旋转/缩放 class（含简单 "rot" 与组合 "rot-90.zoom-150"）
+    lbImg.classList.remove(
+      "rot", "rot-90", "rot-180", "rot-270",
+      "zoom-50", "zoom-75", "zoom-125", "zoom-150", "zoom-200"
+    );
+    // 组合 class 用斜杠分隔符（CSS 同时支持 空格 与 斜杠 作为多 transform 组合）
+    var rotCls = ROT_SUFFIXES[lbRotation / 90 | 0];
+    var zoomCls = ZOOM_SUFFIXES[lbZoom];
+    if (rotCls) lbImg.classList.add(rotCls);
+    if (zoomCls) lbImg.classList.add(zoomCls);
+  }
+  document.getElementById("lightbox-rotate").addEventListener("click", function () {
+    lbRotation = (lbRotation + 90) % 360;
+    applyLbTransform();
+  });
+  document.getElementById("lightbox-zoom-in").addEventListener("click", function () {
+    var steps = [50, 75, 100, 125, 150, 200];
+    var i = steps.indexOf(lbZoom);
+    if (i < steps.length - 1) { lbZoom = steps[i + 1]; applyLbTransform(); }
+  });
+  document.getElementById("lightbox-zoom-out").addEventListener("click", function () {
+    var steps = [50, 75, 100, 125, 150, 200];
+    var i = steps.indexOf(lbZoom);
+    if (i > 0) { lbZoom = steps[i - 1]; applyLbTransform(); }
+  });
+  // 还原按钮已按 King 要求移除（每次打开 lightbox 自动重置为 0°/100%）
+
+  // ── 查看原题（高清原图）· King 2026-09-12 需求 ──
+  // 复习页卡片缩略图是 1200px 压缩版（内联 data URI，离线可看但细节糊）；
+  // 本函数经 GET /api/image?path=<img_original 绝对路径> 拉**全分辨率原图**替换显示。
+  // 流程：先打开 lightbox（用卡片缩略图占位，避免显示上一张残留）→ 原图到货替换
+  //       → 服务未运行/404 时温柔降级（保留缩略图 + 明确提示，绝不空窗）。
+  window.__fdViewOriginal = function (origPath, label, fallbackSrc) {
+    if (!origPath) { return; }
+    lbRotation = 0;
+    lbZoom = 100;
+    applyLbTransform();
+    if (fallbackSrc) { lbImg.src = fallbackSrc; }  // 占位：先显示当前卡片缩略图
+    lbCap.textContent = (label || "原题") + " · 正在加载全分辨率原图…";
+    lbMask.classList.add("open");
+    fetch("http://127.0.0.1:8765/api/image?path=" + encodeURIComponent(origPath))  // audit-ok: 本地服务地址，非外部依赖
+      .then(function (r) {
+        if (!r.ok) { throw new Error("HTTP " + r.status); }
+        return r.blob();
+      })
+      .then(function (b) {
+        lbImg.src = URL.createObjectURL(b);
+        lbCap.textContent = (label || "原题") + " · 全分辨率原图（可缩放/旋转）";
+      })
+      .catch(function () {
+        lbCap.textContent = (label || "原题")
+          + " · 高清原图加载失败——请确认 FDL 服务在运行（当前显示卡片缩略图）";
+      });
+  };
+  // 全局委托：任何 [data-view-orig] 链接 → 打开高清原图。
+  // 同时取同卡片内缩略图作失败回退（避免 lightbox 显示上一张残留图）。
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("[data-view-orig]");
+    if (!a) { return; }
+    var card = a.closest && a.closest(".card");
+    var thumbImg = card ? card.querySelector("img.review-img") : null;
+    window.__fdViewOriginal(
+      a.getAttribute("data-view-orig"),
+      a.getAttribute("data-view-orig-label") || "原题",
+      thumbImg ? thumbImg.src : null
+    );
+  });
+
+  // === 复习反馈表单 ===
+  // 暴露给复习页的按钮调用：review-open-form(scheduleId, kpId, subjectId, label, intervalDays)
+  // 注：实际提交写入后端 /fdl/review/feedback 接口；若无后端则本地 console.log（开发态可见）
+  var rfAttachments = [];
+  function reviewOpenForm(opts) {
+    document.getElementById("rf-schedule-id").value = opts.scheduleId || "";
+    document.getElementById("rf-mistake-id").value  = opts.mistakeId || "";
+    document.getElementById("rf-kp-id").value       = opts.kpId || "";
+    document.getElementById("rf-subject-id").value  = opts.subjectId || "";
+    document.getElementById("rf-kp-label").value    = opts.label || ("KP#" + (opts.kpId || ""));
+    document.getElementById("rf-duration").value    = "";
+    document.getElementById("rf-note").value        = "";
+    document.getElementById("rf-rating").value      = "3";
+    rfAttachments = [];
+    renderRfList();
+    document.getElementById("rf-status").textContent = "";
+    var f = document.getElementById("review-form");
+    f.style.display = "block";
+    f.setAttribute("aria-hidden", "false");
+    f.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  function reviewCloseForm() {
+    var f = document.getElementById("review-form");
+    f.style.display = "none";
+    f.setAttribute("aria-hidden", "true");
+  }
+  function renderRfList() {
+    var ul = document.getElementById("rf-attach-list");
+    ul.innerHTML = rfAttachments.map(function (a, i) {
+      return '<li><span>[' + a.kind + '] ' + a.path + (a.note ? ' · ' + a.note : '') +
+             '</span><button type="button" data-i="' + i + '" title="移除">×</button></li>';
+    }).join("");
+  }
+  document.getElementById("rf-attach-add").addEventListener("click", function () {
+    var kind = document.getElementById("rf-attach-kind").value;
+    var path = document.getElementById("rf-attach-path").value.trim();
+    if (!path) { return; }
+    rfAttachments.push({ kind: kind, path: path });
+    document.getElementById("rf-attach-path").value = "";
+    renderRfList();
+  });
+  document.getElementById("rf-attach-list").addEventListener("click", function (e) {
+    if (e.target.tagName !== "BUTTON") { return; }
+    rfAttachments.splice(parseInt(e.target.getAttribute("data-i"), 10), 1);
+    renderRfList();
+  });
+  document.getElementById("rf-cancel").addEventListener("click", reviewCloseForm);
+  // 真实的复习反馈提交函数：真正写入后端 /api/review/feedback
+  // 返回 Promise，调用方据此显示真实结果（不再假成功）。
+  window.__review_feedback_submit = function (payload) {
+    var mid = parseInt(payload.mistake_id, 10);
+    return fetch("http://127.0.0.1:8765/api/review/feedback", {  // audit-ok: 本地服务地址，非外部依赖
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mistake_id: mid,
+        self_rating: payload.self_rating,
+        duration_seconds: payload.duration_seconds,
+        note: payload.note
+      })
+    }).then(function (r) {
+      return r.json().then(function (j) { return { ok: r.ok, j: j }; });
+    });
+  };
+  document.getElementById("rf-submit").addEventListener("click", function () {
+    var status = document.getElementById("rf-status");
+    var btn = document.getElementById("rf-submit");
+    var mid = parseInt(document.getElementById("rf-mistake-id").value, 10) || null;
+    var payload = {
+      mistake_id:       mid,
+      schedule_id:      parseInt(document.getElementById("rf-schedule-id").value, 10) || null,
+      kp_id:            parseInt(document.getElementById("rf-kp-id").value, 10) || null,
+      subject_id:       parseInt(document.getElementById("rf-subject-id").value, 10) || null,
+      self_rating:      parseInt(document.getElementById("rf-rating").value, 10),
+      duration_seconds: parseInt(document.getElementById("rf-duration").value, 10) || null,
+      note:             document.getElementById("rf-note").value || null,
+      attachments:      rfAttachments,
+      srs_interval_days: window.__rfInterval || null,
+      submitted_at:     new Date().toISOString(),
+    };
+    // 无法确定错题：不允许提交，避免假成功
+    if (mid === null) {
+      status.className = "rf-status err";
+      status.textContent = "无法确定错题（请从错题卡片的反馈按钮进入）";
+      return;
+    }
+    // 提交中：禁用按钮，明确提示
+    status.className = "rf-status";
+    status.textContent = "正在记录...";
+    btn.disabled = true;
+    window.__review_feedback_submit(payload).then(function (res) {
+      // 走法 B（2026-09-12）：提交成功后静默刷新实时队列 —— "复习完立刻看到计数变化"。
+      // 失败不影响主流程（refreshReviewToday 自带降级与阈值告警）。
+      if (res.ok && res.j && res.j.ok && window.__fdRealtime) {
+        try { window.__fdRealtime.refreshReviewToday(); } catch (e) {}
+      }
+      var j = res.j || {};
+      if (res.ok && j.ok) {
+        if (j.updated === false) {
+          status.className = "rf-status ok";
+          status.textContent = "今日已记录过该题（幂等跳过）";
+        } else {
+          status.className = "rf-status ok";
+          var due = j.next_due ? (" / 下次复习 " + j.next_due) : "";
+          status.textContent = "已记录：掌握度 " + payload.self_rating + due;
+        }
+        setTimeout(reviewCloseForm, 1500);
+      } else {
+        status.className = "rf-status err";
+        status.textContent = "记录失败：" + (j.error || "服务未返回成功（请确认 FDL 服务在运行）");
+      }
+    }).catch(function (err) {
+      status.className = "rf-status err";
+      status.textContent = "记录失败：" + (err && err.message ? err.message : String(err));
+    }).then(function () {
+      btn.disabled = false;
+    });
+  });
+  // 把 open 函数挂到 window，供外部 JS（fdl_ui）或 review 页按钮调用
+  window.reviewOpenForm = reviewOpenForm;
+  window.reviewCloseForm = reviewCloseForm;
+  // 全局委托：复习页反馈按钮
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest('button[data-action="review-feedback"]');
+    if (!btn) { return; }
+    window.__rfInterval = parseFloat(btn.getAttribute("data-interval-days")) || null;
+    reviewOpenForm({
+      scheduleId:  btn.getAttribute("data-schedule-id") || "",
+      mistakeId:   btn.getAttribute("data-mistake-id") || "",
+      kpId:        btn.getAttribute("data-kp-id") || "",
+      subjectId:   btn.getAttribute("data-subject-id") || "",
+      label:       btn.getAttribute("data-kp-label") || "",
+    });
+  });
+  if (D.review_all !== undefined && rl) {
+    if (!D.review_all.length) {
+      rl.innerHTML = '<p class="note">错题本还是空的。</p>';
+    } else {
+      // ── 修复（2026-09-09）：已解决/已驯服默认隐藏 + 开关切换 ──
+      // 根因：本面板渲染 D.review_all（全量），已解决仅加徽章未隐藏。
+      // 修复：默认只显示"待复习/今日已复习/已复习"，开关可展开全量。
+      var __showResolved = false;
+      var __allItems = D.review_all;
+      var __hiddenCount = __allItems.filter(function (t) {
+        return t.status === "已解决" || t.is_tamed === 1;
+      }).length;
+      var toggle = document.createElement("label");
+      toggle.style.cssText = "display:flex;align-items:center;gap:6px;margin-bottom:10px;"
+        + "font-size:13px;color:var(--text-secondary);cursor:pointer;user-select:none";
+      toggle.innerHTML = '<input type="checkbox" id="show-resolved-toggle" style="accent-color:var(--gold)">'
+        + ' 显示已解决/已驯服 <span style="opacity:.7">（' + __hiddenCount + ' 条已隐藏）</span>';
+      rl.parentNode.insertBefore(toggle, rl);
+      var renderList = function () {
+        var list = __showResolved ? __allItems : __allItems.filter(function (t) {
+          return t.status !== "已解决" && t.is_tamed !== 1;
+        });
+        if (!list.length) {
+          rl.innerHTML = '<p class="note">当前筛选下没有错题——勾选上方开关可查看已解决/已驯服。</p>';
+          return;
+        }
+        // 2026-09-13 King：按复习日分块——
+        //   ① 「待复习」独立区块；② 「已复习」按复习日分组（今日/具体日期），
+        //   标明具体哪几天复习过（卡片内 review_dates 日期链）。
+        var reviewing = list.filter(function (t) { return t.status === "待复习"; });
+        var reviewed = list.filter(function (t) { return t.status !== "待复习"; });
+        var byDate = {};
+        reviewed.forEach(function (t) {
+          var k = t.last_review_date || (t.status === "今日已复习" ? "今天" : "更早");
+          (byDate[k] = byDate[k] || []).push(t);
+        });
+        var dateKeys = Object.keys(byDate).sort().reverse();  // 日期倒序（最新在前）
+        var cardHtml = function (t) {
+        var imgHtml = t.thumb
+          ? '<img class="review-img" src="' + t.thumb + '" data-kp="' + t.id + '"'
+            + ' style="width:100%;border:2px solid var(--ink);cursor:zoom-in;'
+            + 'border-radius:var(--sketch-radius)" alt="错题截图 #' + t.id + '">'
+          : '<p class="note">截图缺失——请到错题快照目录查看原始卷面</p>';
+        var stColor = t.status === "已解决" ? "var(--ok)"
+          : t.status === "今日已复习" ? "var(--teal)" : "var(--warn)";
+        // 查看原题（高清原图）链接：King 2026-09-12 需求。
+        // 卡片缩略图是 1200px 压缩版；本链接经 /api/image 拉**全分辨率原图**进 lightbox。
+        // 用 data 属性 + 全局委托（避免内联 onclick 的引号转义问题）。
+        var origLink = t.img_original
+          ? '<div style="margin:6px 0 2px">'
+            + '<a href="javascript:void(0)" '
+            + 'data-view-orig="' + String(t.img_original).replace(/"/g, "&quot;") + '" '
+            + 'data-view-orig-label="#' + t.id + ' 原题" '
+            + 'style="color:var(--gold);text-decoration:underline;font-size:13px;cursor:pointer">'
+            + '查看原题（高清原图）</a></div>'
+          : '';
+        // 反馈按钮：调用 window.reviewOpenForm 唤起复习反馈表单
+        var feedbackBtn =
+          '<button type="button" data-action="review-feedback" ' +
+            'data-schedule-id="' + (t.schedule_id || "") + '" ' +
+            'data-mistake-id="' + t.id + '" ' +
+            'data-kp-id="' + t.id + '" ' +
+            'data-subject-id="' + (t.subject_id || 1) + '" ' +
+            'data-kp-label="#' + t.id + " · " + (t.error_type || "") + '" ' +
+            'data-interval-days="' + (t.interval_days || 1) + '" ' +
+          'style="margin-top:8px;border:1.5px solid var(--ink);background:transparent;' +
+            'color:var(--ink);border-radius:6px;padding:4px 12px;cursor:pointer;' +
+            'font-family:var(--hand);font-size:13px;">[反馈] 写复习记录</button>';
+        // ── 间隔状态行（复习队列复苏：以复习间隔为排序/处置依据）──
+        // 缺失（旧数据 / 尚未注入）则不渲染，保持向后兼容；
+        // 方形色块表示紧迫度（禁止 emoji）：逾期=warn / 首次复习=teal / 其他=text-tertiary。
+        var intervalRow = "";
+        if (t.interval_label) {
+          var _block = t.is_startup ? "var(--teal)"
+                     : (t.overdue_days > 0 ? "var(--warn)" : "var(--text-tertiary)");
+          intervalRow =
+            '<div style="display:flex;align-items:center;gap:6px;' +
+              'font-size:13px;color:var(--text-secondary);margin:2px 0 6px">' +
+              '<span style="display:inline-block;width:10px;height:10px;' +
+                'background:' + _block + ';border-radius:2px"></span>' +
+              '<span>' + t.interval_label + '</span>' +
+            '</div>';
+        }
+        // data-mcard（2026-09-12）：供"待确认候选 → 关联题号"跳转定位的稳定锚点。
+        // 用 data 属性而非 id：静态报告可能多处渲染同一错题，避免 id 冲突；
+        // 定位一律 querySelector('[data-mcard="<mid>"]') 精确匹配。
+        // 复习日期链（King 2026-09-13：标明具体哪几天复习过）
+        var reviewDatesHtml = (t.review_dates && t.review_dates.length)
+          ? '<div style="font-size:12px;color:var(--text-secondary);margin:2px 0 4px">'
+            + '复习记录：<b>' + t.review_dates.slice(0, 6).map(function (d) { return d.slice(5); }).join("、")
+            + '</b>' + (t.review_dates.length > 6 ? " 等 " + t.review_dates.length + " 天" : "")
+            + "（共 " + t.review_dates.length + " 天）</div>"
+          : '';
+        // ── 复习履历（King 2026-09-13 #1：日期 + 方式 + 文件链接）──
+        // 数据源：review_feedback（复习反馈，含自评/耗时/备注）+ ASR 口述录音
+        // （文件链接 = 录音绝对路径，file:// 打开）。折叠展示，默认收起。
+        var _escH = function (s) {
+          return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        };
+        var _rh = t.review_history || [];
+        var reviewHistoryHtml = _rh.length
+          ? '<details style="margin:2px 0 6px"><summary style="cursor:pointer;font-size:12px;'
+            + 'color:var(--text-secondary)">复习履历（' + _rh.length + ' 条）</summary>'
+            + '<div style="margin-top:4px;border-left:2px solid var(--line);padding-left:8px">'
+            + _rh.map(function (h) {
+                var _fname = h.file ? String(h.file).split("/").pop() : "";
+                var _fileHtml = "";
+                if (_fname) {
+                  _fileHtml = h.file_path
+                    ? '<a href="file://' + encodeURI(h.file_path) + '" target="_blank" rel="noopener" '
+                      + 'title="打开文件：' + _escH(h.file_path) + '" '
+                      + 'style="color:var(--gold);text-decoration:underline">' + _escH(_fname) + '</a>'
+                    : _escH(_fname);
+                }
+                var _detail = _escH(h.detail || "");
+                return '<div style="display:flex;gap:8px;font-size:12px;padding:2px 0">'
+                  + '<span style="min-width:3.2em;color:var(--teal)">' + _escH((h.date || "").slice(5)) + '</span>'
+                  + '<span style="min-width:4.8em;color:var(--text-secondary)">' + _escH(h.method || "复习") + '</span>'
+                  + '<span style="flex:1">' + _detail
+                  + (_fileHtml ? (_detail ? "　" : "") + _fileHtml : "") + '</span>'
+                  + '</div>';
+              }).join("")
+            + '</div></details>'
+          : "";
+        return '<div class="card" data-mcard="' + t.id + '"><h3>#' + t.id + " · " + t.error_type +
+               " · " + t.date + ' <span style="font-size:13px;color:' + stColor +
+               '">【' + t.status + "】</span></h3>" + reviewDatesHtml + reviewHistoryHtml +
+               intervalRow + imgHtml + origLink +
+               '<div class="t">来源：' + t.source_ref + "</div>" +
+               feedbackBtn +
+               // 挂载到本错题的口述复习记录（ASR 分析摘要）
+               '<div class="review-card-host" data-mid="' + t.id + '">' +
+                 ((t.audio_analyses || []).map(audioMiniHtml).join("")) +
+               '</div>' +
+               "</div>";
+        };
+        // 区块标题（待复习 / 已复习分隔）
+        var sect = function (title, inner, count, color) {
+          return '<h3 style="margin:16px 0 8px;font-size:14px;color:' + (color || "var(--ink)")
+            + ';border-bottom:2px dashed var(--line);padding-bottom:4px">'
+            + title + ' <span style="font-weight:400;color:var(--text-secondary)">（'
+            + count + '）</span></h3>' + inner;
+        };
+        var html = "";
+        if (reviewing.length) {
+          html += sect("待复习", reviewing.map(cardHtml).join(""), reviewing.length, "var(--warn)");
+        }
+        if (reviewed.length) {
+          var sub = dateKeys.map(function (k) {
+            var label = (k === "今天") ? "今天" : (k === "更早" ? "更早" : k.slice(5));
+            return '<h4 style="margin:10px 0 6px;font-size:13px;color:var(--teal)">'
+              + label + " · 复习 " + byDate[k].length + " 题</h4>"
+              + byDate[k].map(cardHtml).join("");
+          }).join("");
+          html += sect("已复习（按复习日）", sub, reviewed.length, "var(--teal)");
+        }
+        rl.innerHTML = html;
+      };
+      renderList();
+      // 走法 B：供 __fdRealtime 把"已被 fdl_serve 判定不在待复习队列"的条目改标。
+      // 只改 t.status（不动 DOM 结构），复用 renderList 的既有渲染逻辑。
+      window.__fdApplyPending = function (pendingIds) {
+        var changed = 0;
+        __allItems.forEach(function (t) {
+          if (t.status === "待复习" && !pendingIds[t.id]) { t.status = "今日已复习"; changed++; }
+        });
+        if (changed) { renderList(); }
+      };
+      toggle.querySelector("#show-resolved-toggle").addEventListener("change", function (e) {
+        __showResolved = e.target.checked;
+        renderList();
+      });
+    }
+  }
+  // === 今日复习语音分析（ASR + minimax-M3）===
+  // ── 语音分析挂载到错题卡（2026-09-09 King：录音不单独显示框）──
+  // 已匹配的录音渲染为错题卡内的"口述复习记录"摘要；
+  // 未匹配的才在独立块显示，并提供"指定到错题"下拉（人工确认 → POST /api/match 持久化）。
+  function audioMiniHtml(a) {
+    var an = a.analysis || {};
+    var errs = (an.errors || []);
+    var errSummary = errs.length
+      ? errs.map(function (e) { return "[" + (e.severity || "?") + "] " + (e.description || ""); }).join("；")
+      : "无明显错误";
+    return '<details class="ra-mini" style="margin-top:8px;border:1px dashed var(--border);border-radius:6px;padding:6px 8px;background:#FAFAF7">'
+      + '<summary style="cursor:pointer;font-size:12px;color:var(--text-secondary)">'
+      + '口述复习记录 · ' + (a.audio || "?") + ' · ' + (a.duration_sec || 0).toFixed(0) + 's'
+      + (errs.length ? ' · ' + errs.length + ' 个错误点' : ' · 无错误') + '</summary>'
+      + '<div style="font-size:12px;margin-top:6px"><b>错误点：</b>' + errSummary + '</div>'
+      + (an.self_evaluation ? '<div style="font-size:12px;margin-top:4px"><b>自我评价：</b>' + an.self_evaluation + '</div>' : '')
+      + '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:11px;color:var(--text-tertiary)">原始转写</summary>'
+      + '<pre style="font-size:11px;white-space:pre-wrap;margin:4px 0 0">' + (a.text_raw || "").replace(/</g, "&lt;") + '</pre></details>'
+      + '</details>';
+  }
+  function audioCardHtml(a) {  // 独立未匹配块的完整卡片（同原 renderReviewAudio 结构）
+    var an = a.analysis || {};
+    var kpsHtml = (an.kps || []).map(function (k) {
+      return '<span class="ra-tag fam">' + (k.name || "?") + " · conf=" + (k.confidence || "?") + "</span>";
+    }).join("");
+    var errsHtml = (an.errors || []).map(function (e) {
+      return "<li>[sev=" + (e.severity || "?") + "] " + (e.description || "") + "</li>";
+    }).join("");
+    var mas = an.mastery || {};
+    var masteries = [].concat(
+      (mas.familiar || []).map(function (x) { return '<span class="ra-tag fam">' + x + "</span>"; }),
+      (mas.confused || []).map(function (x) { return '<span class="ra-tag cnf">' + x + "</span>"; }),
+      (mas.needs_practice || []).map(function (x) { return '<span class="ra-tag prc">' + x + "</span>"; })
+    ).join("");
+    return '<div class="ra-card" data-audio="' + (a.audio || "") + '">' +
+      '<h4>[' + (an.subject || "?") + "] " + (a.audio || "?") + '</h4>' +
+      '<div class="ra-meta"><span>时长: ' + (a.duration_sec || 0).toFixed(1) + 's</span>' +
+      '<span>字数: ' + (a.char_count || 0) + '</span></div>' +
+      '<div class="ra-section"><strong>关键知识点：</strong><br>' + (kpsHtml || '<span class="note">（未识别）</span>') + '</div>' +
+      '<div class="ra-section"><strong>错误点：</strong>' + (errsHtml ? '<ul class="ra-err-list">' + errsHtml + '</ul>' : '无明显错误') + '</div>' +
+      '<div class="ra-section"><strong>掌握度：</strong><br>' + (masteries || '<span class="note">（未识别）</span>') + '</div>' +
+      '<details style="margin-top:6px"><summary class="ra-toggle">展开/收起 原始转写</summary>' +
+      '<pre class="ra-text">' + (a.text_raw || "").replace(/</g, "&lt;") + '</pre></details>' +
+      '</div>';
+  }
+  (function renderReviewAudio() {
+    var block = document.getElementById("review-audio-block");
+    var list  = document.getElementById("review-audio-list");
+    var unmatched = (D && D.review_audio_unmatched) || [];
+    if (!unmatched.length) {
+      if (block) { block.style.display = "none"; }  // 全部已挂载到错题卡 → 独立块隐藏
+      return;
+    }
+    if (!block) { return; }
+    block.style.display = "block";
+    var note = document.createElement("p");
+    note.className = "note";
+    note.style.cssText = "margin:0 0 10px;font-size:12px";
+    note.textContent = "以下录音尚未对应到具体错题——请指定归属，确认后即挂载到该错题卡内（不再单独显示）。";
+    list.parentNode.insertBefore(note, list);
+
+    var allOpts = (D.review_all || []).map(function (t) {
+      return '<option value="' + t.id + '">#' + t.id + " · " + (t.error_type || "") + " · " + (t.status || "") + "</option>";
+    }).join("");
+    list.innerHTML = unmatched.map(function (a) {
+      var sug = a.suggested_mistake_id;
+      var opts = allOpts.replace(
+        'value="' + sug + '"',
+        'value="' + sug + '" selected'
+      );
+      return '<div class="ra-card" data-audio="' + (a.audio || "") + '">' +
+        '<h4>' + (a.audio || "?") + ' · ' + (a.duration_sec || 0).toFixed(0) + 's</h4>' +
+        '<div class="ra-section"><strong>转写摘要：</strong>' +
+        ((a.text_raw || "").slice(0, 80)) + "…</div>" +
+        (sug ? '<div style="font-size:12px;color:var(--text-secondary);margin:4px 0">系统建议：#' + sug + "（已预选，可修改）</div>" : "") +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">' +
+          '<select data-match-select="' + (a.audio || "") + '" style="flex:1;min-width:220px;padding:6px;border:1.5px solid var(--ink);border-radius:6px;font-family:var(--hand);font-size:13px">' + opts + '</select>' +
+          '<button type="button" data-match-confirm="' + (a.audio || "") + '" style="padding:6px 14px;border:none;background:var(--gold);color:#fff;border-radius:6px;cursor:pointer;font-family:var(--hand);font-size:13px">确认挂载</button>' +
+        '</div>' +
+        '<div data-match-status="' + (a.audio || "") + '" style="font-size:12px;margin-top:4px"></div>' +
+        '</div>';
+    }).join("");
+
+    // 确认挂载：POST /api/match 持久化 → 从未匹配列表移除 + 即时合并到错题卡 DOM
+    list.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-match-confirm]");
+      if (!btn) { return; }
+      var audio = btn.getAttribute("data-match-confirm");
+      var sel = list.querySelector('[data-match-select="' + audio + '"]');
+      var statusEl = list.querySelector('[data-match-status="' + audio + '"]');
+      var mid = sel ? parseInt(sel.value, 10) : null;
+      if (!mid) { if (statusEl) { statusEl.textContent = "请先选择错题。"; } return; }
+      var card = list.querySelector('.ra-card[data-audio="' + audio + '"]');
+      if (statusEl) { statusEl.textContent = "保存匹配中…"; }
+      fetch("http://127.0.0.1:8765/api/match", {  // audit-ok: 本地服务地址，非外部依赖
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio: audio, mistake_id: mid }),
+      }).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.ok) { throw new Error(j.error || "保存失败"); }
+        finishMatch(audio, mid, card, statusEl, "已挂载到 #" + mid + "（已持久化到 match_map.json）");
+      }).catch(function () {
+        // file:// 或服务未启动 → localStorage 暂存（本浏览器持久，下次打开仍生效）
+        try {
+          var m = JSON.parse(localStorage.getItem("fdl_audio_match") || "{}");
+          m[audio] = mid;
+          localStorage.setItem("fdl_audio_match", JSON.stringify(m));
+          finishMatch(audio, mid, card, statusEl,
+            "已挂载到 #" + mid + "（浏览器本地暂存；启动 fdl_serve.py 后重新确认可永久保存）");
+        } catch (err) {
+          if (statusEl) { statusEl.textContent = "保存失败：" + err; }
+        }
+      });
+    });
+
+    function finishMatch(audio, mid, card, statusEl, msg) {
+      // 1. 从未匹配列表移除该卡
+      if (card) { card.remove(); }
+      if (statusEl) { statusEl.textContent = msg; }
+      // 2. 即时把语音摘要合并到对应错题卡 DOM（review 面板内所有 #id 的卡）
+      var a = (D.review_audio_analyses || []).filter(function (x) { return x.audio === audio; })[0];
+      if (a && a.analysis) {
+        var host = document.querySelectorAll('.review-card-host[data-mid="' + mid + '"]');
+        host.forEach(function (h) { h.insertAdjacentHTML("beforeend", audioMiniHtml(a)); });
+      }
+      // 3. 剩余未匹配为 0 → 整块隐藏
+      if (!list.querySelector(".ra-card")) {
+        block.style.display = "none";
+      }
+    }
+  })();
+  // 家长视图（V4 · PVP-01~07）：静默期屏蔽质量诊断 + 科目趋势 + NMKP 周
+  var pb = document.getElementById("parent-body");
+  if (D.parent && pb) {
+    var P = D.parent;
+    var h = "";
+    h += '<div class="card"><h3>NMKP 周净掌握（上周）</h3><div class="v">' +
+         P.nmkp_week + "</div>" +
+         '<div class="t">新掌握 − 新遗忘（静默期 ' + (P.silent ? "隐藏质量口径" : "正常显示") + "）</div></div>";
+    if (!P.diagnosis_visible) {
+      h += '<div class="card na"><h3>质量诊断</h3><div class="v">屏蔽中</div>' +
+           '<div class="t">上线前 2 周只显示体验信号——第 3 周起自动开放</div></div>';
+    } else if (P.subject_trend.length) {
+      h += '<div class="card ok"><h3>科目级掌握趋势</h3><div class="v">' +
+           P.subject_trend.length + " 科</div>" +
+           '<div class="t">聚合视图 · 无知识点明细（权限矩阵拦截）</div></div>';
+    } else {
+      h += '<div class="card na"><h3>科目级掌握趋势</h3><div class="v">—</div>' +
+           '<div class="t">学习数据积累中</div></div>';
+    }
+    h += '<div class="card"><h3>月度复盘</h3><div class="v">—</div>' +
+         '<div class="t">月末自动汇总（数据积累中）</div></div>';
+    h += '<p class="note">本页所有数据截止 ' + P.cutoff +
+         "（延迟 7 天）；不含任何作答明细/知识点状态明细——数据层拦截。</p>";
+    pb.innerHTML = h;
+  }
+  // 能量电池（V3 · VIS-06）：R(t) 最低 Top10；红电池 ≤1/3 屏（Top10 天然满足）
+  var en = document.getElementById("energy-list");
+  if (D.energy !== undefined && en) {
+    // 今日复习时间摘要（2026-09-13 King：记忆能量页须记录今日复习时间；
+    // 数据源 = session + ASR 录音，由「上传复习资料」提交后随报告刷新更新）
+    var _trm = D.today_review_min;
+    var _trs = D.today_review_source || {};
+    var todayLine = (_trm != null)
+      ? '<p class="note" style="margin-bottom:10px">今日复习时间：<b style="color:var(--teal)">'
+        + Number(_trm).toFixed(1) + ' min</b>'
+        + '（录音口述 ' + (Number(_trs.asr_min) || 0).toFixed(1) + ' min'
+        + ' + 会话 ' + (Number(_trs.session_min) || 0).toFixed(1) + ' min）'
+        + ' —— 每次「上传复习资料」提交后自动更新。</p>'
+      : "";
+    if (!D.energy.length) {
+      var charges = D.review_charges || [];
+      var cg = charges.length
+        ? charges.map(function (c) {
+            return '<div class="card ok"><h3>' + c.date + " · " + (c.source || "错题复习")
+                   + "</h3>" +
+                   '<div class="v">' + c.minutes + " min</div>" +
+                   '<div class="t">复习就是充电</div></div>';
+          }).join("")
+        : '<p class="note">等第一次点亮后，这里会显示能量条与充电记录。</p>';
+      en.innerHTML = todayLine +
+        '<p class="note">能量条将在正式作答数据积累后出现。目前的错题复习（口述复盘 = 深度行为）同样在充电：</p>' +
+        '<div class="cards">' + cg + "</div>";
+    } else {
+      en.innerHTML = todayLine + D.energy.map(function (e) {
+        var pct = Math.round(e.r * 100);
+        var color = e.r < 0.3 ? "#B4552D" : (e.r < 0.6 ? "#C98A1B" : "#3E7A52");
+        var enDet = { source: "kp_state.stability_days → R(t) 衰减公式",
+          query: "R = (1 + 0.236·Δt/S)^(-0.5)，Δt=距上次复习天数",
+          rows: [{ code: e.code, name: e.name, r: e.r }],
+          note: "R(t) = 记忆可提取概率；<30% 红色（该充电啦）——复习一次即回电。"
+              + "下方编号为挂载到该知识点的错题，可点击跳转照片卡片。",
+          // 2026-09-13 King #15：问题编号超链接（跳到今日复习对应卡片）
+          links: (e.mistake_ids || []).slice(0, 8).map(function (x) {
+            return { label: "#" + x, jump: x };
+          }) };
+        return '<div class="card num-click" data-detail="' +
+               encodeURIComponent(JSON.stringify(enDet)) + '"><h3>' + e.name + "</h3>" +
+               '<svg viewBox="0 0 200 20" style="width:200px;height:20px">' +
+               '<rect x="2" y="4" width="186" height="12" rx="6" fill="none" stroke="#2B2B2B" stroke-width="1.5"/>' +
+               '<rect x="5" y="7" width="' + Math.max(3, 180 * e.r) + '" height="6" rx="3" fill="' +
+               color + '"/>' + '<rect x="189" y="7" width="5" height="6" rx="2" fill="#2B2B2B"/></svg>' +
+               '<div class="v" style="color:' + color + '">' + pct + "%</div>" +
+               '<div class="t">该充电啦——做一次复习就回电</div></div>';
+      }).join("");
+    }
+  }
+})();
+// ── 走法 B：实时 section 客户端（King 2026-09-12）────────────────────
+// 设计原则：**降级优先**。fdl_serve 不在时报告必须完整可用（沿用嵌入的
+// D.review_today / D.review_all 快照）；只在可达时才用实时值覆盖。
+// 失败计数达阈值才提示，避免偶发失败就打扰孩子。
+(function () {
+  var API = "http://127.0.0.1:8765";  // audit-ok: 本地服务地址，非外部依赖
+  var FAIL_WINDOW_MS = 60 * 60 * 1000;  // 1 小时滑动窗口
+  var FAIL_THRESHOLD = 3;               // 窗口内失败 >= 3 次 → 提示
+  var fails = [];
+
+  // fetch 安全封装：5s 超时 + 永不抛异常（失败一律 resolve(null)）
+  function fetchSafe(url, options, timeoutMs) {
+    timeoutMs = timeoutMs || 5000;
+    return new Promise(function (resolve) {
+      var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+      var done = false;
+      var timer = setTimeout(function () {
+        if (done) { return; }
+        done = true;
+        if (ctrl) { try { ctrl.abort(); } catch (e) {} }
+        resolve(null);
+      }, timeoutMs);
+      var opts = {};
+      for (var k in (options || {})) { opts[k] = options[k]; }
+      if (ctrl) { opts.signal = ctrl.signal; }
+      fetch(url, opts).then(function (r) {
+        if (done) { return; }
+        done = true; clearTimeout(timer);
+        if (!r.ok) { resolve(null); return; }
+        resolve(r.json().catch(function () { return null; }));
+      }).catch(function () {
+        if (done) { return; }
+        done = true; clearTimeout(timer);
+        resolve(null);
+      });
+    });
+  }
+
+  function noteFail() {
+    var now = Date.now();
+    fails = fails.filter(function (t) { return now - t < FAIL_WINDOW_MS; });
+    fails.push(now);
+    if (fails.length >= FAIL_THRESHOLD) { showOfflineHint(); }
+  }
+
+  function showOfflineHint() {
+    if (document.getElementById("fd-realtime-hint")) { return; }
+    var cc = document.getElementById("cockpit-cards");
+    if (!cc) { return; }
+    var d = document.createElement("div");
+    d.id = "fd-realtime-hint";
+    d.style.cssText = "font-size:12px;color:var(--text-secondary);margin-bottom:10px;"
+      + "padding:6px 10px;border:1px dashed var(--border);border-radius:6px";
+    d.textContent = "实时同步暂不可用（fdl_serve 未运行）——当前显示最近一次生成的快照。";
+    cc.parentNode.insertBefore(d, cc.nextSibling);
+  }
+
+  function clearHint() {
+    var h = document.getElementById("fd-realtime-hint");
+    if (h) { h.remove(); }
+    fails = [];
+  }
+
+  // 拉取今日队列 → 覆盖驾驶舱计数 + 把已复习完的条目改标（列表自然变化）
+  function refreshReviewToday() {
+    return fetchSafe(API + "/api/report/section/review_today?cap=200").then(function (d) {
+      if (!d || !d.ok) { noteFail(); return false; }
+      var items = d.items || [];
+      var pendingIds = {};
+      items.forEach(function (it) { pendingIds[it.id] = true; });
+      var cnt = document.getElementById("fd-review-count");
+      if (cnt) { cnt.textContent = String(items.length); }
+      if (typeof window.__fdApplyPending === "function") {
+        try { window.__fdApplyPending(pendingIds); } catch (e) {}
+      }
+      clearHint();
+      return true;
+    });
+  }
+
+  // 拉取完成率 → 覆盖展示（挂点不存在则跳过，不报错）
+  function refreshCompletion() {
+    return fetchSafe(API + "/api/report/section/completion_rate?days=7").then(function (d) {
+      if (!d || !d.ok) { noteFail(); return false; }
+      var el = document.getElementById("fd-completion-rate");
+      if (el) { el.textContent = (d.rate * 100).toFixed(0) + "%"; }
+      return true;
+    });
+  }
+
+  window.__fdRealtime = {
+    fetchSafe: fetchSafe,
+    refreshReviewToday: refreshReviewToday,
+    refreshCompletion: refreshCompletion
+  };
+  // 初始拉取：失败静默降级（不提示，因为报告主体仍可看）
+  refreshReviewToday();
+  refreshCompletion();
+})();
+
+// ══════════════════════════════════════════════════════════════
+// 待确认知识点候选处理（2026-09-12 King 需求）
+//   1) 列出全部待确认候选 + 系统建议（同意晋级 / 建议驳回）
+//   2) 逐条「同意」/「驳回」按钮
+//   3) 驳回须填写原因（前端强校验）
+//   4) 驳回原因交 LLM 二审，展示判断结论（UPHOLD/OVERTURN/UNCERTAIN）
+// 数据源：GET  /api/kp/candidates?status=PENDING
+// 操作：POST /api/kp/candidates/<id>/approve | /reject {reason}
+// ══════════════════════════════════════════════════════════════
+(function () {
+  var API = "http://127.0.0.1:8765";  // audit-ok: 本地服务地址，非外部依赖
+  var block = document.getElementById("kp-candidates-block");
+  if (!block) { return; }
+  var listEl = document.getElementById("kp-candidates-list");
+  var statEl = document.getElementById("kp-cand-status");
+  var cntEl = document.getElementById("kp-cand-count");
+
+  // 超时封装：LLM 二审可能要几十秒，默认给足；普通拉取 8s
+  function req(url, options, timeoutMs) {
+    timeoutMs = timeoutMs || 8000;
+    return new Promise(function (resolve) {
+      var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+      var done = false;
+      var timer = setTimeout(function () {
+        if (done) { return; }
+        done = true;
+        if (ctrl) { try { ctrl.abort(); } catch (e) {} }
+        resolve({ ok: false, _timeout: true });
+      }, timeoutMs);
+      var opts = options || {};
+      if (ctrl) { opts.signal = ctrl.signal; }
+      fetch(url, opts).then(function (r) {
+        if (done) { return; }
+        done = true; clearTimeout(timer);
+        return r.json().then(function (j) { resolve({ ok: r.ok, status: r.status, j: j }); },
+                              function () { resolve({ ok: false, status: r.status }); });
+      }).catch(function (e) {
+        if (done) { return; }
+        done = true; clearTimeout(timer);
+        resolve({ ok: false, _err: String(e && e.message || e) });
+      });
+    });
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  // 系统建议徽章（文字标记，无 emoji）
+  function suggestBadge(c) {
+    var s = c.suggestion;
+    if (s === "APPROVE") {
+      return '<span style="display:inline-block;padding:1px 8px;border-radius:3px;'
+        + 'background:var(--ok);color:#fff;font-size:12px">建议晋级</span>';
+    }
+    if (s === "REJECT") {
+      return '<span style="display:inline-block;padding:1px 8px;border-radius:3px;'
+        + 'background:var(--warn);color:#fff;font-size:12px">建议驳回</span>';
+    }
+    if (s === "PENDING_REVIEW") {
+      return '<span style="display:inline-block;padding:1px 8px;border-radius:3px;'
+        + 'border:1px solid var(--text-tertiary);color:var(--text-secondary);font-size:12px">待人工判断</span>';
+    }
+    return '<span style="display:inline-block;padding:1px 8px;border-radius:3px;'
+      + 'border:1px dashed var(--border);color:var(--text-tertiary);font-size:12px">未生成建议</span>';
+  }
+
+  // LLM 二审结论徽章
+  function verdictBadge(v) {
+    var map = {
+      UPHOLD: ["维持驳回", "var(--warn)"],
+      OVERTURN: ["建议复议", "var(--teal)"],
+      UNCERTAIN: ["存疑待判", "var(--text-secondary)"]
+    };
+    var m = map[v] || ["未知", "var(--text-tertiary)"];
+    return '<span style="display:inline-block;padding:1px 8px;border-radius:3px;'
+      + 'border:1.5px solid ' + m[1] + ';color:' + m[1] + ';font-size:12px">'
+      + 'LLM 复核：' + m[0] + '</span>';
+  }
+
+  function render(items) {
+    if (!items.length) {
+      block.style.display = "none";
+      return;
+    }
+    block.style.display = "block";
+    cntEl.textContent = String(items.length);
+    listEl.innerHTML = items.map(function (c) {
+      var reviewHtml = "";
+      if (c.llm_review) {
+        reviewHtml = '<div style="margin-top:8px;padding:8px 10px;border-left:3px solid var(--teal);'
+          + 'background:rgba(0,0,0,0.02);border-radius:0 6px 6px 0">'
+          + '<div style="margin-bottom:4px">' + verdictBadge(c.llm_review.verdict) + '</div>'
+          + '<div style="font-size:12px;color:var(--text-secondary)">'
+          + esc(c.llm_review.rationale || "") + '</div></div>';
+      }
+      var rejectForm = '<div class="kp-reject-form" data-cid="' + c.id + '" style="display:none;margin-top:8px">'
+        + '<textarea class="kp-reject-reason" data-cid="' + c.id + '" rows="2" '
+        + 'placeholder="请填写驳回原因（必填）——例如：该知识点已覆盖 / 超出学习范围 / 与 #14 重复" '
+        + 'style="width:100%;box-sizing:border-box;border:1.5px solid var(--ink);'
+        + 'border-radius:6px;padding:6px 8px;font-size:13px;font-family:inherit"></textarea>'
+        + '<div style="margin-top:6px;display:flex;gap:8px;align-items:center">'
+        + '<button type="button" class="kp-do-reject" data-cid="' + c.id + '" '
+        + 'style="padding:5px 14px;border:1.5px solid var(--warn);background:var(--warn);'
+        + 'color:#fff;border-radius:6px;cursor:pointer;font-size:13px">提交驳回并请 LLM 复核</button>'
+        + '<button type="button" class="kp-cancel-reject" data-cid="' + c.id + '" '
+        + 'style="padding:5px 14px;border:1.5px solid var(--border);background:transparent;'
+        + 'color:var(--text-secondary);border-radius:6px;cursor:pointer;font-size:13px">取消</button>'
+        + '<span class="kp-row-status" data-cid="' + c.id + '" style="font-size:12px;color:var(--text-secondary)"></span>'
+        + '</div></div>';
+      // ── 关联错题链接（2026-09-12 King 需求）──
+      // samples 来自候选注册时写入的 sample_json（mistake_id 主键精确关联），
+      // 服务端已联表补齐原图绝对路径。点击 → 同页滚动定位到该题卡片并高亮。
+      var samplesHtml = "";
+      if (c.samples && c.samples.length) {
+        var mLinks = c.samples.map(function (s) {
+          var mid = s.mistake_id;
+          var tip = (s.source_ref || ("错题 #" + mid));
+          if (s.has_photo && s.img_original) {
+            return '<a href="javascript:void(0)" class="kp-mistake-link" '
+              + 'data-mid="' + mid + '" data-orig="' + esc(s.img_original) + '" '
+              + 'title="' + esc(tip) + '（点击跳转到该题原图）">#' + mid + '</a>';
+          }
+          return '<a href="javascript:void(0)" class="kp-mistake-link kp-nophoto" '
+            + 'data-mid="' + mid + '" '
+            + 'title="' + esc(tip) + '（原图缺失）">#' + mid + '</a>';
+        }).join(' · ');
+        samplesHtml = '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px">'
+          + '关联错题：' + mLinks + '</div>';
+      } else {
+        samplesHtml = '<div style="font-size:12px;color:var(--text-tertiary);margin-top:6px">'
+          + '关联错题：无记录</div>';
+      }
+      return '<div class="card kp-cand-card" data-cid="' + c.id + '" '
+        + 'style="margin-bottom:12px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">'
+        +   '<div style="flex:1;min-width:260px">'
+        +     '<div style="font-weight:500">#' + c.id + ' · ' + esc(c.candidate_name)
+        +       ' <span style="font-weight:400;color:var(--text-secondary);font-size:12px">'
+        +       esc(c.candidate_code) + ' · ' + esc(c.kp_type || "") + ' · 证据×' + (c.evidence_count || 0)
+        +       '</span></div>'
+        +     '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">'
+        +       esc((c.rationale || "").slice(0, 160)) + '</div>'
+        +   '</div>'
+        +   '<div style="text-align:right;min-width:120px">' + suggestBadge(c) + '</div>'
+        + '</div>'
+        + samplesHtml
+        + (c.suggestion_reason
+            ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px;'
+              + 'padding:6px 8px;background:rgba(0,0,0,0.03);border-radius:4px">'
+              + '<b>系统建议理由：</b>' + esc(c.suggestion_reason) + '</div>'
+            : '')
+        + '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+        +   '<button type="button" class="kp-approve" data-cid="' + c.id + '" '
+        +   'style="padding:5px 16px;border:1.5px solid var(--ok);background:var(--ok);'
+        +   'color:#fff;border-radius:6px;cursor:pointer;font-size:13px">同意晋级</button>'
+        +   '<button type="button" class="kp-reject" data-cid="' + c.id + '" '
+        +   'style="padding:5px 16px;border:1.5px solid var(--warn);background:transparent;'
+        +   'color:var(--warn);border-radius:6px;cursor:pointer;font-size:13px">驳回</button>'
+        +   '<span class="kp-row-status" data-cid="' + c.id + '" style="font-size:12px;color:var(--text-secondary)"></span>'
+        + '</div>'
+        + rejectForm
+        + reviewHtml
+        + '</div>';
+    }).join("");
+  }
+
+  function rowStatus(cid, text, isErr) {
+    var els = document.querySelectorAll('.kp-row-status[data-cid="' + cid + '"]');
+    els.forEach(function (el) {
+      el.textContent = text || "";
+      el.style.color = isErr ? "#A32D2D" : "var(--text-secondary)";
+    });
+  }
+
+  function reload() {
+    return req(API + "/api/kp/candidates?status=PENDING").then(function (r) {
+      if (!r.ok || !r.j) {
+        block.style.display = "none";
+        return;
+      }
+      render((r.j.items || []));
+    });
+  }
+
+  // ── 关联题号 → 跳转定位原图（2026-09-12 King 需求）──
+  // 四层降级策略（全部同页完成，不离开报告、不弹窗）：
+  //   ① DOM 内找到错题卡 [data-mcard=mid] → 平滑滚动 + 2.4s 金色高亮脉冲；
+  //   ② 未找到：可能被"已解决/已驯服"筛选隐藏 → 自动勾选开关重渲染后重试；
+  //   ③ 仍找不到但服务端确认有原图 → lightbox 直接打开高清原图（兜底，不让用户空手）；
+  //   ④ 都没有 → 行内提示（原图缺失），不跳走、不报错。
+  function jumpToMistake(mid, origPath, cid) {
+    var sel = '[data-mcard="' + mid + '"]';
+    var card = document.querySelector(sel);
+    if (!card) {
+      var tg = document.getElementById("show-resolved-toggle");
+      if (tg && !tg.checked) {
+        tg.checked = true;
+        tg.dispatchEvent(new Event("change"));   // 触发既有 renderList 重渲染
+        card = document.querySelector(sel);
+      }
+    }
+    if (card) {
+      try { card.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+      card.classList.add("fd-jump-highlight");
+      setTimeout(function () { card.classList.remove("fd-jump-highlight"); }, 2600);
+      rowStatus(cid, "");
+      return;
+    }
+    if (origPath) {
+      window.__fdViewOriginal(origPath, "#" + mid + " 原题", null);
+      rowStatus(cid, "该题不在当前列表，已直接打开原图");
+      return;
+    }
+    rowStatus(cid, "该题不在当前列表，且原图缺失（可能已清理）", true);
+  }
+
+  // ── 事件委托（关联跳转 / 同意 / 驳回 / 提交 / 取消）──
+  listEl.addEventListener("click", function (e) {
+    var t = e.target;
+    if (!t || !t.classList) { return; }
+    var cid = t.getAttribute && t.getAttribute("data-cid");
+
+    // 关联题号链接（必须最先判断：<a> 无 data-cid，且不可落入下方按钮分支）
+    var mlink = t.closest && t.closest("a.kp-mistake-link");
+    if (mlink) {
+      var cardEl = mlink.closest(".kp-cand-card");
+      jumpToMistake(
+        mlink.getAttribute("data-mid"),
+        mlink.getAttribute("data-orig") || "",
+        cardEl ? cardEl.getAttribute("data-cid") : null
+      );
+      return;
+    }
+
+    if (t.classList.contains("kp-approve")) {
+      t.disabled = true;
+      rowStatus(cid, "晋级中…");
+      req(API + "/api/kp/candidates/" + cid + "/approve", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decided_by: "FRANK" })
+      }).then(function (r) {
+        if (r.ok && r.j && r.j.ok) {
+          rowStatus(cid, "已晋级为知识点 #" + r.j.promoted_kp_id);
+          setTimeout(reload, 900);
+        } else {
+          t.disabled = false;
+          rowStatus(cid, "失败：" + ((r.j && r.j.error) || (r._timeout ? "超时" : "服务未响应")), true);
+        }
+      });
+      return;
+    }
+
+    if (t.classList.contains("kp-reject")) {
+      var form = listEl.querySelector('.kp-reject-form[data-cid="' + cid + '"]');
+      if (form) { form.style.display = "block"; }
+      var ta = listEl.querySelector('.kp-reject-reason[data-cid="' + cid + '"]');
+      if (ta) { ta.focus(); }
+      return;
+    }
+
+    if (t.classList.contains("kp-cancel-reject")) {
+      var f2 = listEl.querySelector('.kp-reject-form[data-cid="' + cid + '"]');
+      if (f2) { f2.style.display = "none"; }
+      return;
+    }
+
+    if (t.classList.contains("kp-do-reject")) {
+      var ta2 = listEl.querySelector('.kp-reject-reason[data-cid="' + cid + '"]');
+      var reason = ta2 ? ta2.value.trim() : "";
+      if (!reason) {
+        rowStatus(cid, "请先填写驳回原因（必填）", true);
+        if (ta2) { ta2.focus(); }
+        return;
+      }
+      t.disabled = true;
+      rowStatus(cid, "已提交驳回，LLM 复核中（约 10-40 秒）…");
+      // LLM 二审耗时较长 → 超时给 120 秒
+      req(API + "/api/kp/candidates/" + cid + "/reject", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decided_by: "FRANK", reason: reason })
+      }, 120000).then(function (r) {
+        if (r.ok && r.j && r.j.ok) {
+          rowStatus(cid, "已驳回");
+          setTimeout(reload, 900);
+        } else {
+          t.disabled = false;
+          rowStatus(cid, "失败：" + ((r.j && r.j.error) || (r._timeout ? "等待超时（LLM 可能较慢，可稍后重试）" : "服务未响应")), true);
+        }
+      });
+      return;
+    }
+  });
+
+  // 初始加载
+  reload();
+})();
+</script>
+</body>
+</html>

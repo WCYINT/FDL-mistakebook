@@ -1,0 +1,12 @@
+# FDL 运行时依赖（P0，C3.1）—— 9 行精确版本
+# 禁 PyTorch：本文件不含 torch/funasr，见 scripts/check_no_torch.sh
+
+fsrs==6.3.2
+nicegui==3.16.0
+mkdocs-material==9.7.7
+matplotlib==3.11.1
+PyYAML==6.0.3
+rapidocr-onnxruntime==1.2.3
+pyobjc-framework-Vision==12.2.2
+pyobjc-framework-Quartz==12.2.2
+sherpa-onnx==1.13.6

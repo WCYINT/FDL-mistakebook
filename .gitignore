@@ -1,0 +1,95 @@
+# === 运行时数据（核心隐私——永不推送）===
+# Runtime data — NEVER commit (contains the child's mistake book + photos)
+data/
+data/fdl.db
+data/fdl.db-*
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# === 报告与缩略图（HTML 含错题详情 + 错题截图）===
+site/
+site/report.html
+site/images/
+
+# === 日志与备份 ===
+logs/
+backups/
+*.log
+
+# === 测试临时产物 ===
+.pytest-basetemp/
+.pytest_cache/
+.ruff_cache/
+.benchmarks/
+.mypy_cache/
+.tox/
+.cache/
+.verify_tmp/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# === 编辑器/系统 ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+
+# === 用户个人配置（含本机绝对路径 / 凭据）===
+# 注意：.gitignore 不支持行内注释！下面每条规则必须独占一行，
+# 否则整行会被当成文件名模式、规则静默失效（历史事故：secrets.yaml 因此未被忽略）。
+config/fdl_paths.yaml
+config/secrets.yaml
+config/secrets.yml
+config/*.local.yaml
+config/*.local.yml
+.env
+.env.local
+.env.*.local
+*.local.yml
+*.local.yaml
+
+# === 字体 vendor（macOS 系统字体，含版权，不随仓库分发）===
+# Fonts are supplied by the host OS; restore locally per assets/fonts/README.md
+assets/fonts/*.ttc
+assets/fonts/*.ttf
+assets/fonts/*.otf
+
+# === ASR 模型（体积大，本地化部署）===
+models/
+
+# === 归档/备份目录（本地同步产物）===
+ARCHIVED.md
+ARCHIVED.local-bak-*/
+
+# === 临时文件 ===
+*.tmp
+*.bak
+*.bak-*
+
+# === 用户错题照片（**严禁上传**）===
+# The child's mistake photos — NEVER include in repo
+*mistake*photo*.jpg
+*错题*.jpg

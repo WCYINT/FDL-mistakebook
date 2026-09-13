@@ -1,0 +1,63 @@
+# FDL 路径布局配置 —— 示例模板
+#
+# 用法：复制为 config/fdl_paths.yaml 后按本机情况修改。
+#   cp config/fdl_paths.yaml.example config/fdl_paths.yaml
+#
+# 注意：config/fdl_paths.yaml 含本机绝对路径，已被 .gitignore 忽略，切勿提交。
+# 测试与 CI 会在该文件缺失时自动从本模板生成一份（见 tests/conftest.py）。
+#
+# 本文件刻意不硬编码任何绝对路径（NFR-6 零硬编码）：除 primary_db_dir 需要指定外，
+# 其余目录均由运行时通过「锚文件检测」+ layout_version 开关推导。
+
+# 布局版本开关：切换 layout_version 即可在两种目录布局间切换，无需改代码。
+# v1 = 学科目录与本项目目录平级（开源单仓检出的默认形态：swe_dir / fdl_dir 均为 "."）
+# v2 = 学科目录位于本项目目录下的 subjects/ 子目录内
+layout_version: 1
+
+# 学科编码（与 layout.*.subject_dirs 顺序一一对应）
+subject_codes:
+  - "MATH"
+  - "CHINESE"
+  - "ENGLISH"
+  - "SCIENCE"
+
+layout:
+  v1:
+    # 开源单仓检出形态：本项目自身即仓库根，故两者都是当前目录
+    swe_dir: "."
+    fdl_dir: "."
+    subject_dirs:
+      - "1-Math"
+      - "2-语文"
+      - "3-英语"
+      - "4-科学"
+  v2:
+    swe_dir: "."
+    fdl_dir: "."
+    subject_dirs:
+      - "subjects/1-Math"
+      - "subjects/2-语文"
+      - "subjects/3-英语"
+      - "subjects/4-科学"
+
+# FDL 子目录（相对 fdl_dir）
+subdirs:
+  core: "fdl_core"
+  cli: "fdl"
+  tests: "tests"
+  scripts: "scripts"
+  docs: "docs"
+  assets: "assets"
+  data: "data"
+  logs: "logs"
+  backups: "backups"
+  config: "config"
+  models: "models"
+
+# 高频写入数据库所在目录（必填，按本机修改）。
+# 建议放在本机内置盘而非外接盘：外接盘在高频写入下易过热/掉盘。
+# 外接盘上的 data/fdl.db 可作为每日同步镜像。
+primary_db_dir: "~/FDL-data"
+
+# 锚文件（相对仓库根，用于目录结构正确性判定，见 DFD-4 / OPS-03）
+anchor_file: "README.md"

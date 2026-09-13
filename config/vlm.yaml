@@ -1,0 +1,21 @@
+# VLM（多模态大模型）整页直读配置 —— 2026-09-10
+# 用于替代脆弱的 CV 版面切分：由视觉大模型直接看整页作业，
+# 输出结构化题目（题号/题干/作答/红笔批改/是否错/错因）。
+#
+# 🔒 本文件为公开发布物的一部分，**不含任何凭据**：所有密钥一律通过环境变量注入，
+#    不落盘、不写入本文件。请勿在此文件中填写任何 API key / token。
+#
+# 启用步骤：
+#   1) 把 enabled 改为 true，按需调整 base_url / model
+#   2) 在 shell 中导出密钥（只存在于环境变量，不写入文件）：
+#        export DASHSCOPE_API_KEY=<你的密钥>
+#   3) 重启 FDL 分析服务：python scripts/fdl_serve.py --daemon
+# 未启用或调用失败时，系统自动回退到本地 CV 切分流程，不影响使用。
+
+enabled: false
+base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+# 读取密钥的环境变量名（此处只放变量名，绝不放密钥本身）
+api_key_env: DASHSCOPE_API_KEY
+model: "qwen2.5-vl-72b-instruct"
+timeout_sec: 120
+max_side: 2000

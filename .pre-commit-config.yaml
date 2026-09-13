@@ -1,0 +1,43 @@
+# FDL pre-commit 配置（C4.1）
+# 全部 local hooks，离线可用（依赖 venv 中的 ruff / python / bash）。
+#
+# 说明：本项目自身即为 git 根，各 hook 直接在当前仓库根执行。
+# pre-commit 会把工作目录设为仓库根，无需再 cd。
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff-check
+        entry: ruff check .
+        language: system
+        pass_filenames: false
+
+      - id: ruff-format
+        name: ruff-format
+        entry: ruff format --check .
+        language: system
+        pass_filenames: false
+
+      - id: release-gate
+        name: release-gate
+        entry: python scripts/check_release_ready.py .
+        language: system
+        pass_filenames: false
+
+      - id: offline-audit
+        name: offline-audit
+        entry: python scripts/offline_audit.py
+        language: system
+        pass_filenames: false
+
+      - id: no-torch
+        name: no-torch
+        entry: bash scripts/check_no_torch.sh
+        language: system
+        pass_filenames: false
+
+      - id: no-banned-words
+        name: no-banned-words
+        entry: bash scripts/check_no_banned_words.sh
+        language: system
+        pass_filenames: false

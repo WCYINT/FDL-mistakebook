@@ -1,0 +1,93 @@
+# FDL 调度与模型参数（P2-12 / SRS-06）
+# 来源：PRD v1.1 §6.5 掌握度模型参数 + §6.6 调度参数（v1.1 修订值，以本表为准）
+# 🔴 规则：一次只改 1 个变量；每次变更写 model_param_history（版本 + 快照 + 理由）
+# 🔴 硬验收：改本文件不改代码（参数驱动，与 kp_card schema 同一哲学）
+
+version: p2026.09.01
+
+# ── 掌握度模型 ─────────────────────────────
+mastery:
+  F: 0.236              # 固定（使 R(S)=0.9）
+  C: -0.5               # 衰减指数，固定
+  R_TARGET: 0.85        # 可校准 [0.80, 0.90]；儿童取更高以降低挫败感
+  INTERVAL_FACTOR: 1.637  # = ((R_TARGET^-2) - 1) / F
+  K_GROW: 3.0           # 可校准 [1.5, 5.0]
+  K_DECAY: 0.35         # Again 时 S 乘数
+  THETA: 0.6            # 能力权重指数（记忆占 1-THETA=0.4）
+  W_P: 0.75             # A 中表现占比
+  W_G: 0.25             # A 中深度占比 [0.15, 0.35]
+  LAMBDA: 0.7           # 时间衰减因子（近期表现加权）
+  KAPPA: 0.4            # 难度加权强度
+  M_PSEUDO_N: 3.0       # 先验伪计数（冷启动拐杖）
+  N_PRIOR_DECAY: 8.0    # 衰减式伪计数：m_eff = M_PSEUDO_N * e^(-n / N_PRIOR_DECAY)
+  CONF_K: 1.5           # 置信分母常数：Conf = n_eff / (n_eff + CONF_K)
+  G_BASELINE: 0.20      # 深度分基线
+  DEPTH_HALF_LIFE: 60   # 天（深究的保鲜期）
+  PRIOR_P: 0.45         # 表现分先验值（保守，冷启动不应误判掌握）※工程决策，PRD 未定值
+  GRADE_SCORE: {0: 0.0, 1: 0.7, 2: 1.0, 3: 1.0}
+  BOOTSTRAP_S: {0: 0.4, 1: 0.8, 2: 1.2, 3: 2.4}
+  BOOTSTRAP_I: {0: 1, 1: 1, 2: 2, 3: 4}
+  D_UPDATE: {0: 1.0, 1: 0.3, 2: 0.0, 3: -0.5}
+  D_ANCHOR_RATE: 0.10   # 每次更新后向先验回归的比例
+  S_MIN: 0.5
+  S_MAX: 365
+  S_CAP_GROWTH: 120     # 超过不再增长
+
+# ── 状态机阈值 ─────────────────────────────
+transitions:
+  T2: {exposure_min: 2, grade_min: 1}
+  T3: {consecutive_again: 3, cum_again_min: 3, m_adj_max: 0.35}
+  T4: {consec_good: 2, m_adj: 0.65, s_days: 7, n_eff: 5, no_again_days: 14}
+  T5: {mastered_hold_days: 30, reviews_min: 2, m_adj: 0.72, s_days: 45, g_min: 0.35}
+  T6: {grade: 0, delta_m_adj: 0.12}
+  T8: {overdue_ratio: 1.5, r_max: 0.50}
+  T11: {r_max: 0.35}
+  T12: {s_days: 120, reviews_min: 10, consec_good: 2, days_since_review: 120}
+
+# ── 防刷量 ─────────────────────────────────
+anti_grinding:
+  overtime_minutes: 25
+  grinding_threshold: {answers_24h: 5, all_easy: true}
+  grinding_freeze_days: 7
+  golden_test_per_week: 5
+
+# ── 调度容量（PRD §6.6 v1.1 修订值）─────────
+scheduling:
+  new_per_week: 12          # 上限而非配额
+  new_per_day: 3
+  new_per_day_target: 1.15
+  review_per_day: 15        # 软上限
+  review_per_day_hard: 20   # 硬上限
+  daily_minutes_target: 12
+  daily_minutes_cap: 25
+  daily_minutes_floor: 5
+  sessions_per_day: 2       # 晨 8min 复习 + 晚 12min 新学+复习+深度
+  morning_minutes: 8
+  evening_minutes: 12
+  annual_tier_after: 10
+  overdue_tolerance: 1.5
+  kp_max_per_day: 1
+  q_max_per_kp_per_day: 2
+  interval_fuzz: 0.05       # ±5%
+  review_debt_cap: 30
+  exploration_day: SUN      # 周日自由探究日
+  presentation_cap_weeks: 8 # MVP 前 8 周呈现上限 8 道（D-04 规定③）
+  presentation_cap: 8       # 单次呈现上限（晨/晚各 ≤8）
+  relief_mode: {overdue_over: 30, incomplete_days: 3, review_cap: 10, pause_new: true}
+  vacation_mode: {review_cap: 5, pause_new: true, pause_metrics: true}
+
+# ── 学科轮转权重（最大余额法，每周一重算）───
+rotation:
+  MATH: 0.35
+  CHINESE: 0.25
+  ENGLISH: 0.25
+  SCIENCE: 0.15
+
+# ── XP（P1，阶段四接入）─────────────────────
+xp:
+  per_mastery_delta: 100
+  transition: {T4: 50, T5: 120, T10: 20}
+  depth: {teach_back: 50, cross_link: 35, question_raised: 30, variant_solved: 25, self_explore: 20, error_fixed: 15}
+  time_cap_minutes: 10
+  daily_cap: 300
+  level_curve: "40 * n^1.8"

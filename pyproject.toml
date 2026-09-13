@@ -1,0 +1,45 @@
+[project]
+name = "fdl"
+version = "1.3"
+description = "FDL (Frank Deep Learning) — 个人记忆与理解资产系统"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "King" }]
+keywords = ["spaced-repetition", "fsrs", "knowledge-tracking", "offline-first", "education"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/WCYINT/FDL-mistakebook-publish" # audit-ok: 包元数据链接，非运行时代码
+Changelog = "https://github.com/WCYINT/FDL-mistakebook-publish/blob/main/CHANGELOG.md" # audit-ok: 包元数据链接，非运行时代码
+
+[project.scripts]
+fdl = "fdl.cli.main:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["fdl", "fdl.*", "fdl_core", "fdl_core.*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [".venv", "models", "logs", "backups", "assets"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# 行宽由 `ruff format` 统一处理；中文注释/长字符串的字面行宽不做硬性拦截
+# （真源 lint 基线另见 CHANGELOG「已知事项」）。
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

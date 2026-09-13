@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 200" role="img" aria-label="FDL 签名 logo：台灯点亮星轨">
+  <!-- 深空底 -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#10222B"/>
+      <stop offset="1" stop-color="#0B1620"/>
+    </linearGradient>
+    <radialGradient id="lampGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F5B841" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#F5B841" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="640" height="200" rx="18" fill="url(#sky)"/>
+  <!-- 星轨 -->
+  <path d="M 60 150 Q 240 30 560 96" fill="none" stroke="#2E5E6B" stroke-width="1.6" stroke-dasharray="2 6"/>
+  <path d="M 60 162 Q 260 56 560 118" fill="none" stroke="#2E5E6B" stroke-width="1.2" stroke-dasharray="1 8"/>
+  <!-- 星（点亮 = 暖金，未点亮 = 微弱星尘） -->
+  <circle cx="150" cy="96" r="4" fill="#F5B841" opacity="0.95"/>
+  <circle cx="252" cy="66" r="3" fill="#8FA6AD" opacity="0.75"/>
+  <circle cx="352" cy="52" r="5" fill="#F5B841" opacity="0.9"/>
+  <circle cx="446" cy="72" r="3" fill="#8FA6AD" opacity="0.6"/>
+  <circle cx="520" cy="98" r="4" fill="#F5B841" opacity="0.85"/>
+  <!-- 台灯 -->
+  <g transform="translate(84,88)">
+    <ellipse cx="34" cy="52" rx="14" ry="4.5" fill="#0E7C7B"/>
+    <rect x="30" y="14" width="7" height="38" rx="3" fill="#125E5D"/>
+    <path d="M 6 14 A 28 20 0 0 1 62 14 L 34 24 Z" fill="#0E7C7B" stroke="#1A9494" stroke-width="1.5"/>
+    <ellipse cx="34" cy="46" rx="26" ry="20" fill="url(#lampGlow)"/>
+    <circle cx="34" cy="24" r="5" fill="#FFE9B8"/>
+  </g>
+  <!-- 字标 -->
+  <text x="150" y="150" font-family="Avenir Next, PingFang SC, sans-serif" font-size="56"
+        font-weight="700" letter-spacing="6" fill="#E9F2F0">FDL</text>
+  <text x="292" y="150" font-family="PingFang SC, sans-serif" font-size="17"
+        fill="#8FA6AD">Frank Deep Learning · 学习点灯人</text>
+  <text x="150" y="176" font-family="PingFang SC, sans-serif" font-size="12"
+        fill="#51707C">每盏灯下的星，都是自己点亮的</text>
+</svg>

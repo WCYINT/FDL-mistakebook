@@ -1,0 +1,40 @@
+# FDL Frank 可见文案表（P2-19 / UX-05 集中管理）
+# 🔴 本文件是 Frank 界面文案的唯一来源；页面禁止硬编码 Frank 可见文案。
+# 🔴 禁用词 CI（scripts/check_no_banned_words.sh）扫描本文件 + fdl/ui/。
+# 语气规则（PRD §2.3 原则 5/6）：第二人称"你"；动作与探险隐喻；不用考试与评价隐喻；
+# 负面词一律不出现（CI 扫描词表见 scripts/check_no_banned_words.sh）；
+# 答错="还没搞定，再试一次？"
+
+app:
+  title: "FDL · Frank 的学习伙伴"
+  subtitle: "每天进步一点点"
+
+home:
+  greeting: "今天想去探险吗？"
+  ready: "正在准备中，很快就好啦"
+  rest_hint: "休息一下再继续，随时欢迎回来"  # 中性，不评价对错与努力
+
+session:
+  predictability: "第 {index} 题 / 共 {total} 题 · 大约还要 {minutes} 分钟"  # 分母=当前 session（D-04）
+  one_task: "一屏只做一件事"
+
+grade:  # UX-02 三档动作化按钮（第 4 档 Easy 由系统派生，不给按钮）
+  again: "🔁 再学一遍"
+  hard: "🤔 有点卡"
+  good: "✅ 搞定！"
+  ask_recall: "不看答案，你能想起来吗？"  # UX-03，仅按"有点卡"时触发（阶段三）
+
+answer:
+  correct: "搞定！"          # 不过度庆祝
+  retry_invite: "还没搞定，再试一次？"  # 不给红叉、不刺耳
+
+exit:  # UX-04 一键退出（原则 10：无挽留、无罪恶感、无负面记录）
+  button: "今天先到这里"
+  farewell: "好的，今天到这里。明天见！"
+  # 🔴 禁止出现：挽留弹窗 / "确定要退出吗" / "再坚持一下" / 任何努力评判
+
+system:  # 系统级提示：中性文案 + 明确"怎么办"，不出现任何代码（原则 6）
+  ssd_missing_title: "探险地图暂时打不开"
+  ssd_missing_body: "我找不到 Frank 的探险背包了。它在一块外接硬盘上。"
+  ssd_missing_action: "我再试试"
+  ssd_missing_for_parent: "给爸爸的提示"

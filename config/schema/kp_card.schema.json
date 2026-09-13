@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FDL 知识点卡片 frontmatter（PRD §5.6.1）",
+  "type": "object",
+  "required": [
+    "type",
+    "code",
+    "subject",
+    "name",
+    "grade_level",
+    "kp_type",
+    "bloom_level",
+    "abstraction_level",
+    "importance_weight",
+    "base_difficulty",
+    "est_learn_minutes",
+    "est_review_seconds",
+    "tier",
+    "graph_version",
+    "valid_from"
+  ],
+  "properties": {
+    "type": { "const": "knowledge_point" },
+    "id": { "type": "integer" },
+    "code": { "type": "string", "pattern": "^[A-Z]+(-[A-Z0-9]+)+$" },
+    "subject": { "enum": ["MATH", "CHINESE", "ENGLISH", "SCIENCE"] },
+    "name": { "type": "string" },
+    "grade_level": { "type": "integer", "minimum": 1, "maximum": 9 },
+    "semester": { "type": ["integer", "null"] },
+    "grade_term": { "type": "string" },
+    "knowledge_domain": { "type": ["string", "null"] },
+    "parent_code": { "type": ["string", "null"] },
+    "kp_type": { "enum": ["CONCEPT", "SKILL", "FACT"] },
+    "bloom_level": { "type": "integer", "minimum": 1, "maximum": 6 },
+    "abstraction_level": { "type": "integer", "minimum": 1, "maximum": 3 },
+    "importance_weight": { "type": "number", "minimum": 0.2, "maximum": 1.5 },
+    "exam_frequency": { "type": ["integer", "null"], "minimum": 1, "maximum": 5 },
+    "base_difficulty": { "type": "number", "minimum": 1, "maximum": 10 },
+    "est_learn_minutes": { "type": "number", "minimum": 0 },
+    "est_review_seconds": { "type": "integer", "minimum": 1 },
+    "tier": { "enum": ["L0", "L1", "L2", "L3"] },
+    "tier_reason": { "type": ["string", "null"] },
+    "source": { "enum": ["TEXTBOOK", "SYLLABUS", "CUSTOM", null] },
+    "source_ref": { "type": ["string", "null"] },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "strength"],
+        "properties": {
+          "code": { "type": "string" },
+          "strength": { "enum": ["HARD", "SOFT"] }
+        }
+      }
+    },
+    "graph_version": { "type": "string" },
+    "valid_from": { "type": "string" },
+    "valid_to": { "type": ["string", "null"] },
+    "superseded_by": { "type": ["integer", "null"] },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  }
+}
