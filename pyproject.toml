@@ -16,8 +16,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/WCYINT/FDL-mistakebook-publish" # audit-ok: 包元数据链接，非运行时代码
-Changelog = "https://github.com/WCYINT/FDL-mistakebook-publish/blob/main/CHANGELOG.md" # audit-ok: 包元数据链接，非运行时代码
+Homepage = "https://github.com/WCYINT/FDL-mistakebook" # audit-ok: 包元数据链接，非运行时代码
+Changelog = "https://github.com/WCYINT/FDL-mistakebook/blob/main/CHANGELOG.md" # audit-ok: 包元数据链接，非运行时代码
 
 [project.scripts]
 fdl = "fdl.cli.main:main"
