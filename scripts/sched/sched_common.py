@@ -86,7 +86,7 @@ def retry(fn, *, attempts: int = 3, delay_sec: float = 10.0, label: str = ""):
     for i in range(attempts):
         try:
             return fn()
-        except Exception as e:  # noqa: BLE001 —— 重试边界必须吞掉一切
+        except Exception as e:  # noqa: BLE001——重试边界必须吞掉一切
             last_err = e
             if i < attempts - 1:
                 time.sleep(delay_sec)

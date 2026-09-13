@@ -4,6 +4,14 @@ on:
   push:
   pull_request:
 
+# 时区固定为项目基准时区（Asia/Shanghai）。
+# 原因：项目日期口径统一走 fdl_core.srs.time_layer.LOCAL_TZ，而测试中存在
+# `date.today()` 形式的「本地今天」断言；runner 默认时区为 UTC，会让
+# 「本地今天」与 LOCAL_TZ 今天在 00:00-08:00（CST）窗口内相差一天，导致
+# 时区相关用例误报。固定 TZ 后本地与 CI 口径一致。
+env:
+  TZ: Asia/Shanghai
+
 jobs:
   test:
     runs-on: macos-latest
